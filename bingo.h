@@ -67,6 +67,7 @@ void playBingo(Player &p){
     do{
         if(ans == "yes" || ans == "1"){
             player.randbingo(player.dataP);
+            cout << "you table" << endl;
             player.show_table(player.player_peper);
             cout << "do you want to pick another table?  [1]yes [2]no" << endl;
             cin >> ans;
