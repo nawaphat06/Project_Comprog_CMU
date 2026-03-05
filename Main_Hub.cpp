@@ -29,7 +29,7 @@ int main(){
         cout << "2. Play Slot" << endl;
         cout << "3. Play Hi-Lo" << endl;
         cout << "4. Play Bingo" << endl;
-        cout << "พิมพ์ 0 เพื่อออกจาก minigame" << endl;
+        cout << "พิมพ์ 0 เพื่อออกจาก game" << endl;
         cout << "Select option: ";
         cin >> choice;
 

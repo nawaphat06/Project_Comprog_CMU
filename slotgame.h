@@ -21,8 +21,11 @@ struct Symbol {
     int weight;
 };
 
+// ปรับความยาวชื่อสัญลักษณ์ให้เท่ากัน (9 ตัวอักษร) เพื่อให้ตารางไม่เบี้ยว
 vector<Symbol> symbols = {
-    {"[GOLD]", 500, 2},{"[RED]", 100, 6},  {"[BLUE]", 50, 8}, {"[ GREEN ]", 30, 10}, {"[ K ] ", 15, 14}, {"[ Q ] ", 10, 15}, {"[ J ]" , 8, 20},{"[ 10 ]", 5 , 25}
+    {" [GOLD]  ", 500, 2}, {"  [RED]  ", 100, 6}, {" [BLUE]  ", 50, 8}, 
+    {"[ GREEN ]", 30, 10}, {"  [ K ]  ", 15, 14}, {"  [ Q ]  ", 10, 15}, 
+    {"  [ J ]  ", 8, 20},  {" [ 10 ]  ", 5 , 25}
 };
 
 Symbol spinSymbol() {
@@ -60,18 +63,29 @@ void playSlot(Player &p) {
     
     int bet;
     cout << "\n--- Welcome to SLOT ---" << endl;
-    cout << "Enter your bet: ";
+    cout << "Credits: " << balance << endl;
+    cout << "Enter your bet (Type 0 to Exit to Menu): "; // จุดทางออกที่ 1: ก่อนเริ่มเกม
     cin >> bet;
+
+    if (bet == 0) return; // กด 0 เพื่อกลับเมนูหลักทันที
+
+    // ระบบป้องกันคนกรอกตัวอักษรหรือกรอกเงินติดลบ
+    if (cin.fail() || bet < 0 || bet > balance) {
+        cin.clear();
+        cin.ignore(10000, '\n');
+        cout << "[System] Invalid bet amount!\n";
+        return;
+    }
 
     cin.ignore(1000, '\n');
 
     while (balance >= bet) {
-        cout << "Balance: " << balance << " | Bet: " << bet << endl;
-        cout << "Press Enter to Spin (or type '0' to exit)...";
+        cout << "\nBalance: " << balance << " | Bet: " << bet << endl;
+        cout << "Press Enter to Spin (or type '0' to exit)..."; // จุดทางออกที่ 2: ก่อนปั่นสล็อต
         
         string input;
         getline(cin, input);
-        if(input == "0") break;
+        if(input == "0") break; // ออกจากลูปเกมกลับไปเมนูหลัก
 
         balance -= bet;
         int multiplier = 1;
@@ -112,10 +126,15 @@ void playSlot(Player &p) {
             p.loss_count++; 
         }
         cout << "----------------------------" << endl;
+
+        // แสดงสถิติล่าสุดหลังปั่นเสร็จแต่ละครั้ง
+        cout << "\n--- UPDATED STATS ---" << endl;
+        p.showProfile();
+        cout << "---------------------\n" << endl;
     }
 
     if (balance < bet) {
-        cout << "Game Over! You're out of balance." << endl;
+        cout << "[System] Game Over! You don't have enough balance for this bet." << endl;
         Sleep(2000); 
     }
 }

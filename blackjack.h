@@ -70,7 +70,7 @@ void playBlackjack(Player &p) {
             break;
         }
         
-        p.credit -= bet; // หักเงิน
+        p.credit -= bet; 
 
         vector<deck_name_value> PlayerDeck = blueprint_deck;
         vector<deck_name_value> PlayerHand;
@@ -80,8 +80,9 @@ void playBlackjack(Player &p) {
 
         string status, dummy;
         bool player_can_draw = true;
+        bool exit_mid_game = false;
 
-        cout << "Press enter to draw the first two cards!";
+        cout << "\nPress enter to draw the first two cards!";
         getline(cin, dummy);
         
         drawdeck_bj("Player", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
@@ -99,20 +100,28 @@ void playBlackjack(Player &p) {
                 break;
             }
 
-            cout << "Hit(a) or Stand(b) >> ";
+            cout << "Hit(a), Stand(b) or Exit to Menu(0) >> "; 
             getline(cin, status);
-            if (status == "a" || status == "A") {
+
+            if (status == "0") { // ถ้ากด 0 ระหว่างเลือก Hit/Stand
+                cout << "Exiting to menu... Refunded bet." << endl;
+                p.credit += bet; // คืนเงินเดิมพันให้เพราะออกกลางเกม
+                exit_mid_game = true;
+                break; 
+            }
+            else if (status == "a" || status == "A") {
                 drawdeck_bj("Player", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
             } else {
                 player_can_draw = false;
             }
         }
 
+        if (exit_mid_game) break; // ออกจากลูปเกมใหญ่กลับไปหน้าเมนูหลัก
+
         // Bot Turn
         drawdeck_bj("Bot", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
         drawdeck_bj("Bot", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
 
-        // Stage 5: dealer decision
         vector<bool> true_or_false_spinwheel;
         int bot_want_to_draw = 1;
         while (bot_want_to_draw == 1) {
