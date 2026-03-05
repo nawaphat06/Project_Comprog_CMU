@@ -69,12 +69,12 @@ void playBingo(Player &p){
     player.show_table(player.player_peper);
     
     string ans;
-    cout << "do you want to pick another table?  [1]yes [2]no [0]Forfeit to Menu" << endl; 
+    cout << "do you want to pick another table?  [1]yes [2]no [0]Exit to Menu" << endl; 
     cin >> ans;
     
     // จุดออกที่ 2: กดออกตอนเลือกกระดาษ (เสียเงิน เพราะเห็นกระดาษแล้ว)
     if (ans == "0") {
-        cout << "\n[System] You forfeited the game! Bet is lost." << endl;
+        cout << "\n[System] You Exit the game! Bet is lost." << endl;
         p.loss_count++;
         return;
     }
@@ -84,21 +84,21 @@ void playBingo(Player &p){
             player.randbingo(player.dataP);
             cout << "you table" << endl;
             player.show_table(player.player_peper);
-            cout << "do you want to pick another table?  [1]yes [2]no [0]Forfeit to Menu" << endl;
+            cout << "do you want to pick another table?  [1]yes [2]no [0]Exit to Menu" << endl;
             cin >> ans;
             
             if (ans == "0") {
-                cout << "\n[System] You forfeited the game! Bet is lost." << endl;
+                cout << "\n[System] You Exit the game! Bet is lost." << endl;
                 p.loss_count++;
                 return;
             }
         }else{
             if(ans != "no" && ans != "2"){
-                cout << "please input (yes/no) or (1/2) or 0 to Forfeit" << endl;
+                cout << "please input (yes/no) or (1/2) or 0 to Exit" << endl;
                 cin >> ans;
                 
                 if (ans == "0") {
-                    cout << "\n[System] You forfeited the game! Bet is lost." << endl;
+                    cout << "\n[System] You Exit the game! Bet is lost." << endl;
                     p.loss_count++;
                     return;
                 }
@@ -116,7 +116,7 @@ void playBingo(Player &p){
         cout << "colum win" << endl;
     }
 
-    cout << "Press Enter to start drawing numbers! (or type '0' to Forfeit)" << endl;
+    cout << "Press Enter to start drawing numbers! (or type '0' to Exit)" << endl;
     cin.ignore(1000, '\n'); 
 
     while(!player.checkscore(player.dataS,player.wincount,player.type_win) && !enemy.checkscore(enemy.dataS,enemy.wincount,player.type_win)){
@@ -124,7 +124,7 @@ void playBingo(Player &p){
         
         // จุดออกที่ 3: ระหว่างกำลังสุ่มเลข (เสียเงิน)
         if(ans == "0"){
-            cout << "\n[System] You forfeited the game! Bet is lost." << endl;
+            cout << "\n[System] You Exit the game! Bet is lost." << endl;
             p.loss_count++; 
             return;
         }
@@ -139,7 +139,7 @@ void playBingo(Player &p){
         player.show_table(player.score);
         cout << "Numbers drawn so far: ";
         player.showsetnum(setnum,count);
-        cout << "Press Enter to draw next number...(0 to Forfeit)" << endl;
+        cout << "Press Enter to draw next number(0 to Menu)" << endl;
     }
 
     cout << "\n==========================" << endl;

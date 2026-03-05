@@ -101,11 +101,11 @@ void playBlackjack(Player &p) {
             }
 
             // เตือนให้ชัดเจนว่าถ้าออกตอนนี้จะเสียเงิน
-            cout << "Hit(a), Stand(b) or Forfeit/Exit(0) >> "; 
+            cout << "Hit(a), Stand(b) or Exit(0) >> "; 
             getline(cin, status);
 
             if (status == "0") { // ถ้ากด 0 ชิ่งหนีตอนเห็นไพ่แล้ว
-                cout << "\n[System] You forfeited the game! Bet is lost." << endl;
+                cout << "\n[System] You Exit the game! Bet is lost." << endl;
                 p.loss_count++; // บันทึกสถิติแพ้ (เงินไม่ได้คืนเพราะโดนหักไปแล้วตอนต้นลูป)
                 exit_mid_game = true;
                 break; 
