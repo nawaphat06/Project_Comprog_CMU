@@ -1,8 +1,9 @@
 #include <iostream>
 #include <string>
+
 #include "Player.h"
 #include "bingo.h" // ต้องดึงไฟล์เกมของเพื่อนเข้ามาด้วย
-//#include "slotgame.h"
+#include "slotgame.h"
 
 using namespace std;
 
@@ -47,7 +48,7 @@ int main(){
                 playBlackjack(p1);
                 break;
             case 2:
-                //playSlot(p1);
+                playSlot(p1);
                 break;
             case 3:
                 playHilo(p1);
