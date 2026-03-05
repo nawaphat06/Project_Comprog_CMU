@@ -2,13 +2,12 @@
 #include <string>
 #include "Player.h"
 #include "bingo.h" // ต้องดึงไฟล์เกมของเพื่อนเข้ามาด้วย
-#include "slotgame.h"
+//#include "slotgame.h"
 
-// func เรียกเกม (ประกาศแบบรับ Player ทั้งก้อน)
+using namespace std;
+
 void playBlackjack(Player &p);
-void playSlot(Player &p);
 void playHilo(Player &p);
-// void playBingo(Player &p); <-- ลบออกเพราะมันอยู่ใน bingo.h แล้ว
 
 int main(){
     //รับชื่อ + ต้อนรับ
@@ -39,22 +38,21 @@ int main(){
             break;
         }
 
-        // ส่ง p1 ไปแบบ Reference ทั้งก้อนเลย ชีวิตจะง่ายขึ้นครับ
+        // ล้างบัฟเฟอร์ Enter ก่อนเข้าเกม
+        cin.ignore();
+
+        // ส่ง p1 ไปแบบ Reference ทั้งก้อนเลย
         switch (choice) {
             case 1:
-                cin.ignore();
                 playBlackjack(p1);
                 break;
             case 2:
-            cin.ignore();
-                playHilo(p1);
+                //playSlot(p1);
                 break;
             case 3:
-                cin.ignore();
-                playSlot(p1);
+                playHilo(p1);
                 break;
             case 4:
-                cin.ignore(); // ล้างบัฟเฟอร์ Enter ก่อนเข้าเกมบิงโก
                 playBingo(p1);
                 break;    
             default:
@@ -64,8 +62,5 @@ int main(){
 
     return 0;
 }
-
-// ลบฟังก์ชัน void playBingo(Player &p){} ว่างๆ ตรงนี้ออกไปได้เลยครับ
-// ปล่อยเกมที่เหลือไว้รอเพื่อนส่งมา
-void playBlackjack(Player &p){ cout << "Coming soon\n"; }
-void playSlot(Player &p){ cout << "Coming soon\n"; }
+void playBlackjack(Player &p){ cout << "\n[System] Blackjack is coming soon!\n"; }
+void playHilo(Player &p){ cout << "\n[System] Hi-Lo is coming soon!\n"; }
