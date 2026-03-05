@@ -2,13 +2,12 @@
 #include <string>
 
 #include "Player.h"
-#include "bingo.h" // ต้องดึงไฟล์เกมของเพื่อนเข้ามาด้วย
+#include "bingo.h" //ต้องดึงไฟล์เกมของเพื่อนเข้ามาด้วย
 #include "slotgame.h"
+#include "blackjack.h"
+#include "Hilo.h"
 
 using namespace std;
-
-void playBlackjack(Player &p);
-void playHilo(Player &p);
 
 int main(){
     //รับชื่อ + ต้อนรับ
@@ -42,7 +41,7 @@ int main(){
         // ล้างบัฟเฟอร์ Enter ก่อนเข้าเกม
         cin.ignore();
 
-        // ส่ง p1 ไปแบบ Reference ทั้งก้อนเลย
+        // ส่ง p1 ไปแบบ Reference ทั้งก้อน
         switch (choice) {
             case 1:
                 playBlackjack(p1);
@@ -63,5 +62,3 @@ int main(){
 
     return 0;
 }
-void playBlackjack(Player &p){ cout << "\n[System] Blackjack is coming soon!\n"; }
-void playHilo(Player &p){ cout << "\n[System] Hi-Lo is coming soon!\n"; }
