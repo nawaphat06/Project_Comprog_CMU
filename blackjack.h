@@ -103,9 +103,9 @@ void playBlackjack(Player &p) {
             cout << "Hit(a), Stand(b) or Exit to Menu(0) >> "; 
             getline(cin, status);
 
-            if (status == "0") { // ถ้ากด 0 ระหว่างเลือก Hit/Stand
+            if (status == "0") {
                 cout << "Exiting to menu... Refunded bet." << endl;
-                p.credit += bet; // คืนเงินเดิมพันให้เพราะออกกลางเกม
+                p.credit += bet; 
                 exit_mid_game = true;
                 break; 
             }
@@ -116,7 +116,7 @@ void playBlackjack(Player &p) {
             }
         }
 
-        if (exit_mid_game) break; // ออกจากลูปเกมใหญ่กลับไปหน้าเมนูหลัก
+        if (exit_mid_game) break;
 
         // Bot Turn
         drawdeck_bj("Bot", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
@@ -124,32 +124,45 @@ void playBlackjack(Player &p) {
 
         vector<bool> true_or_false_spinwheel;
         int bot_want_to_draw = 1;
+        int bot_times_drawn = 0; // เพิ่มตัวแปรนับจำนวนการจั่วของ Bot กลับมาแล้ว
+
         while (bot_want_to_draw == 1) {
             if (bot_card_total_value < 20) {
                 for (int i = 0; i < 21 - bot_card_total_value; i++) true_or_false_spinwheel.push_back(1);
                 for (int i = 0; i < bot_card_total_value; i++) true_or_false_spinwheel.push_back(0);
                 int rng = rand() % true_or_false_spinwheel.size();
                 bot_want_to_draw = true_or_false_spinwheel[rng];
+                
                 if (bot_want_to_draw == 1 || bot_card_total_value <= 11) {
                     drawdeck_bj("Bot", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
+                    bot_times_drawn++; // นับจำนวนครั้งที่ Bot จั่วเพิ่ม
                 }
                 true_or_false_spinwheel.clear();
             } else break;
         }
 
+        // --- เพิ่มการแสดงผลตอนจบตามโค้ดเก่าเป๊ะๆ ---
+        cout << "\nDealer has drawn: | ";
+        for (int i = 0; i < BotHand.size(); i++){
+            cout << BotHand[i].name << " | ";
+        }
+        cout << "\n\nDealer has total value of cards in your hand of " << bot_card_total_value <<"\n";
+        cout << "You have total value of cards in your hand of " << player_card_total_value <<"\n";
+        cout << "\nDealer has additional drawn: " << bot_times_drawn << " Time(s).\n\n";
+        // ------------------------------------------
+
         // Judgement
-        cout << "\nDealer has total: " << bot_card_total_value << endl;
         int final_bot_val = (bot_card_total_value > 21) ? 0 : bot_card_total_value;
 
         if (player_card_total_value <= 21 && player_card_total_value > final_bot_val) {
-            cout << "Result: You win!" << endl;
+            cout << "You win!" << endl;
             p.credit += (bet * 2);
             p.win_count++;
         } else if (player_card_total_value <= 21 && player_card_total_value == final_bot_val) {
-            cout << "Result: Tie!" << endl;
+            cout << "Tie!" << endl;
             p.credit += bet;
         } else {
-            cout << "Result: You lose!" << endl;
+            cout << "You lose!" << endl;
             p.loss_count++;
         }
 
