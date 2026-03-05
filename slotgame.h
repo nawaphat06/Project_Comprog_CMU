@@ -7,7 +7,7 @@
 #include <ctime>
 #include <cstdlib>
 
-// --- โค้ด 2 บรรทัดนี้ยังต้องเก็บไว้นะครับ เพื่อแก้บัคของ Windows ---
+// แก้บัคของ Windows
 #define WIN32_LEAN_AND_MEAN 
 #include <windows.h>
 
@@ -15,7 +15,6 @@
 
 using namespace std;
 
-// สัญลักษณ์และคะแนน (ลบ static ออกแล้ว)
 struct Symbol {
     string name;
     int value;
@@ -37,9 +36,8 @@ Symbol spinSymbol() {
     return symbols.back();
 }
 
-// ฟังก์ชันแสดงผล (ลบ inline ออกแล้ว)
 void displayBoard(const vector<vector<Symbol>>& board, int multiplier) {
-    cout << "\n\n";   // <--- ดันตารางลงมาแทนการล้างหน้าจอ
+    cout << "\n\n";
     cout << "----------------------------" << endl;
     cout << "      ASSTECS SLOT GAMES    " << endl;
     cout << "----------------------------" << endl;
@@ -55,7 +53,6 @@ void displayBoard(const vector<vector<Symbol>>& board, int multiplier) {
     cout << "----------------------------" << endl;
 }
 
-// ฟังก์ชันหลักของเกม (ลบ inline ออกแล้ว)
 void playSlot(Player &p) { 
     SetConsoleOutputCP(CP_UTF8);
 
