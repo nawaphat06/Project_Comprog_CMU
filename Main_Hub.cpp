@@ -10,6 +10,7 @@
 using namespace std;
 
 int main(){
+    SetConsoleOutputCP(CP_UTF8); //ทำให้ภาษาไทยไม่เพี้ยน
     //รับชื่อ + ต้อนรับ
     string name;
     cout << "Welcome to Casino Simulator" << endl;

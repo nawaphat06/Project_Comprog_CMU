@@ -81,7 +81,7 @@ void playSlot(Player &p) {
 
     while (balance >= bet) {
         cout << "\nBalance: " << balance << " | Bet: " << bet << endl;
-        cout << "Press Enter to Spin (or type '0' to exit)..."; // จุดทางออกที่ 2: ก่อนปั่นสล็อต
+        cout << "Press Enter to Spin (or type '0' to exit)"; // จุดทางออกที่ 2: ก่อนปั่นสล็อต
         
         string input;
         getline(cin, input);
