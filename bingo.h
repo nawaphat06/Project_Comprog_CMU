@@ -51,11 +51,13 @@ void playBingo(Player &p){
     //set enemy
     enemy.setscorefalse(enemy.dataS);
     enemy.randbingo(enemy.dataP);
+    cout << "enemy table" << endl;
     enemy.show_table(enemy.player_peper);
-    
+
     //set player
     player.setscorefalse(player.dataS);
     player.randbingo(player.dataP);
+    cout << "you table" << endl;
     player.show_table(player.player_peper);
     
     //ผู้เล่นเลือกกระดาษ
