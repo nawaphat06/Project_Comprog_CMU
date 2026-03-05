@@ -106,7 +106,7 @@ void playBingo(Player &p){
         cout << "you table" << endl;
         player.show_table(player.score);
         player.showsetnum(setnum,count);
-        cout << "Press Enter to draw next number...(0 to exist)" << endl;
+        cout << "Press Enter to draw next number...(0 to Exit)" << endl;
         if(ans == "0"){
             return;
         }
