@@ -62,19 +62,23 @@ void playBingo(Player &p){
     
     //ผู้เล่นเลือกกระดาษ
     string ans;
-    cout << "do you want to pick another table?  [1]yes [2]no" << endl;
+    cout << "do you want to pick another table?  [1]yes [2]no [0]exit" << endl;
     cin >> ans;
     do{
         if(ans == "yes" || ans == "1"){
             player.randbingo(player.dataP);
             cout << "you table" << endl;
             player.show_table(player.player_peper);
-            cout << "do you want to pick another table?  [1]yes [2]no" << endl;
+            cout << "do you want to pick another table?  [1]yes [2]no [0]exit" << endl;
             cin >> ans;
         }else{
             if(ans != "no" && ans != "2"){
-                cout << "please input (yes/no) or (1/2)" << endl;
+                cout << "please input (yes/no) or (1/2) or (0 to exit)" << endl;
                 cin >> ans;
+            }
+            if(ans == "0"){
+                p.credit += bet;
+                return;
             }
         }
     }while(ans != "no" && ans != "2");
