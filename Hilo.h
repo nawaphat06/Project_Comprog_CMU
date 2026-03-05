@@ -29,74 +29,109 @@ void playHilo(Player &p) {
         cout << "\nEnter bet (Type 0 to Exit to Menu): ";
         cin >> bet;
         
-        // จุดออกที่ 1: ขณะวางเดิมพัน
-        if (bet == 0) return;
+        // จุดที่ 1: หน้าวางเดิมพัน (ยังไม่เริ่มเกม กด 0 ไม่เสียตัง)
+        if (bet == 0) break;
 
         if (cin.fail() || bet < 0 || bet > money) { 
             cin.clear();
             cin.ignore(10000, '\n');
-            cout << "\n[System] Invalid bet amount!";
+            cout << "\n[System] Invalid bet amount!\n";
             continue;
         }
 
-        cout << "\n1. High / Low\n2. Triple\n3. Sum\n0. Exit to Menu";
+        cout << "\n1. High / Low\n2. Triple\n3. Sum\n0. Forfeit & Exit to Menu";
         cout << "\nChoose option: ";
         cin >> choice;
 
-        // จุดออกที่ 2: ขณะเลือกโหมดการเล่น
-        if (choice == 0) return;
+        if (cin.fail()) {
+            cin.clear(); cin.ignore(10000, '\n');
+            cout << "\n[System] Invalid input!\n";
+            continue;
+        }
+
+        // จุดที่ 2: เริ่มเกมแล้ว (กด 0 คือยอมแพ้ หักเงินทันที)
+        if (choice == 0) {
+            cout << "\n[System] You forfeited the game! Bet is lost.\n";
+            money -= bet; // หักเงิน
+            p.loss_count++; // เพิ่มสถิติแพ้
+            break;
+        }
 
         int hl = 0;
         int guessTriple = 0;
         int guessSum = 0;
-        bool back_to_bet = false;
+        bool forfeit = false;
 
         switch (choice) {
             case 1:
-                cout << "\n1. Low (4-10)\n2. High (11-17)\n0. Back to Exit";
+                cout << "\n1. Low (4-10)\n2. High (11-17)\n0. Forfeit & Exit";
                 cout << "\nChoose (1 or 2): ";
                 cin >> hl;
-                // จุดออกที่ 3: ขณะเลือกสูง/ต่ำ
-                if (hl == 0) { back_to_bet = true; break; }
+                if (hl == 0) forfeit = true;
+                else if (hl != 1 && hl != 2) { cout << "\nInvalid choice!\n"; continue; }
                 break;
             case 2:
-                cout << "\nGuess triple number (1-6, 0 to Exit): ";
+                cout << "\nGuess triple number (1-6, 0 to Forfeit): ";
                 cin >> guessTriple;
-                // จุดออกที่ 4: ขณะเลือกเลขตอง
-                if (guessTriple == 0) { back_to_bet = true; break; }
+                if (guessTriple == 0) forfeit = true;
+                else if (guessTriple < 1 || guessTriple > 6) { cout << "\nInvalid choice!\n"; continue; }
                 break;
             case 3:
-                cout << "\nGuess sum (3-18, 0 to Exit): ";
+                cout << "\nGuess sum (3-18, 0 to Forfeit): ";
                 cin >> guessSum;
-                // จุดออกที่ 5: ขณะเลือกผลรวม
-                if (guessSum == 0) { back_to_bet = true; break; }
+                if (guessSum == 0) forfeit = true;
+                else if (guessSum < 3 || guessSum > 18) { cout << "\nInvalid choice!\n"; continue; }
                 break;
             default:
-                cout << "\n[System] Invalid choice!";
+                cout << "\n[System] Invalid choice!\n";
                 continue;
         }
 
-        if (back_to_bet) return; // ออกจากฟังก์ชันทันที
+        // จุดที่ 3: เช็คว่ากดยอมแพ้จากตอนเลือกฝั่งหรือไม่
+        if (forfeit) {
+            cout << "\n[System] You forfeited the game! Bet is lost.\n";
+            money -= bet;
+            p.loss_count++;
+            break;
+        }
     
         int luckyNumber;
         while (true) {
-            cout << "\nChoose Lucky Number (1-6, 0 to Exit): ";
+            cout << "\nChoose Lucky Number (1-6, 0 to Forfeit): ";
             cin >> luckyNumber;
-            // จุดออกที่ 6: ขณะเลือกเลขนำโชค
-            if (luckyNumber == 0) return;
+            
+            if (cin.fail()) { 
+                cin.clear(); cin.ignore(10000, '\n'); 
+                continue; 
+            }
+
+            if (luckyNumber == 0) {
+                forfeit = true;
+                break;
+            }
             if (luckyNumber >= 1 && luckyNumber <= 6) break;
-            else cout << "\n[System] Invalid! Enter 1-6 only.";
+            else cout << "\n[System] Invalid! Enter 1-6 only.\n";
+        }
+
+        // จุดที่ 4: เช็คว่ากดยอมแพ้จากตอนเลือกเลขนำโชคหรือไม่
+        if (forfeit) {
+            cout << "\n[System] You forfeited the game! Bet is lost.\n";
+            money -= bet;
+            p.loss_count++;
+            break;
         }
         
         string dummy;
-        cout << "\nPress Enter to roll the dice (or type '0' to forfeit bet and exit)...";
+        cout << "\nPress Enter to roll the dice (or type '0' to Forfeit)...";
         cin.ignore(1000, '\n');
         getline(cin, dummy);
-        // จุดออกที่ 7: ก่อนทอยเต๋า (ยอมทิ้งเงินเดิมพันเพื่อออก)
+
+        // จุดที่ 5: หน้าสุดท้ายก่อนทอยเต๋า ถ้าเปลี่ยนใจก็หักเงินเช่นกัน
         if (dummy == "0") {
-            money -= bet; // หักเงินเดิมพันที่ลงไปแล้ว
+            cout << "\n[System] You forfeited the game! Bet is lost.\n";
+            money -= bet;
             p.loss_count++;
-            return;
+            break;
         }
 
         int d1 = rollDice();
@@ -163,12 +198,11 @@ void playHilo(Player &p) {
 
         cout << "Play again? (1: Yes / 0: Exit to Menu): ";
         cin >> play;
-        // จุดออกที่ 8: หลังจบเกม
-        if (play == 0) return;
+        if (play == 0) break;
     }
 
     if (money <= 0) {
-        cout << "\n[System] Game Over: Out of money!";
+        cout << "\n[System] Game Over: Out of money!\n";
         p.showProfile();
     }
 }
