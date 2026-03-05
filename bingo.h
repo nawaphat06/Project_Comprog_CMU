@@ -51,10 +51,13 @@ void playBingo(Player &p){
     //set enemy
     enemy.setscorefalse(enemy.dataS);
     enemy.randbingo(enemy.dataP);
-    
+    cout << "enemy table" << endl;
+    enemy.show_table(enemy.player_peper);
+
     //set player
     player.setscorefalse(player.dataS);
     player.randbingo(player.dataP);
+    cout << "you table" << endl;
     player.show_table(player.player_peper);
     
     //ผู้เล่นเลือกกระดาษ
@@ -64,6 +67,7 @@ void playBingo(Player &p){
     do{
         if(ans == "yes" || ans == "1"){
             player.randbingo(player.dataP);
+            cout << "you table" << endl;
             player.show_table(player.player_peper);
             cout << "do you want to pick another table?  [1]yes [2]no" << endl;
             cin >> ans;
@@ -97,9 +101,15 @@ void playBingo(Player &p){
         player.check(player.player_peper,player.score,setnum,count);
         enemy.check(enemy.player_peper,enemy.score,setnum,count);
         
+        cout << "enemy table" << endl;
+        enemy.show_table(enemy.score);
+        cout << "you table" << endl;
         player.show_table(player.score);
         player.showsetnum(setnum,count);
-        cout << "Press Enter to draw next number..." << endl;
+        cout << "Press Enter to draw next number...(0 to Exit)" << endl;
+        if(ans == "0"){
+            return;
+        }
     }
 
     //บอกว่าชนะหรือแพ้ พร้อมคืนเงินเข้า Player p
@@ -113,6 +123,7 @@ void playBingo(Player &p){
         cout << "You received " << prize << " credits!" << endl;
     }else{
         cout << "you lose!" << endl;
+        cout << "enemy table" << endl;
         enemy.show_table(enemy.score);
         cout << "enemy score : " << enemy.wincount << endl;
         
