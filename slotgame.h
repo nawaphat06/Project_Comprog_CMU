@@ -1,17 +1,20 @@
+#ifndef SLOTGAME_H
+#define SLOTGAME_H
 #include <iostream>
 #include <vector>
 #include <string>
 #include <ctime>
 #include <cstdlib>
 #include <windows.h>
-
+#include "Player.h"
 using namespace std;
 
 // สัญลักษณ์และคะแนน
-struct Symbol {
-    string name;
-    int value;
-    int weight;
+class Symbol {
+    public:
+        string name;
+        int value;
+        int weight;
 };
 
 vector<Symbol> symbols = {
@@ -47,18 +50,25 @@ void displayBoard(const vector<vector<Symbol>>& board, int multiplier) {
     cout << "----------------------------" << endl;
 }
 
-int main() {
+void playSlot(Player &p) { 
     SetConsoleOutputCP(CP_UTF8);
     srand(time(0));
-    int balance = 100;
-    int bet = 1;
+    
+    int bet;
+    cout << "\n--- Welcome to ASSTECS SLOT ---" << endl;
+    cout << "Current Credits: " << p.credit << endl;
+    cout << "Enter your bet per spin: ";
+    cin >> bet;
 
-    while (balance >= bet) {
-        cout << "Balance: " << balance << " | Bet: " << bet << endl;
-        cout << "Press Enter to Spin...";
-        cin.get();
+    // 3. เปลี่ยนเงื่อนไขลูปให้ใช้เงินจาก p.credit
+    while (p.credit >= bet) {
+        cout << "\nBalance: " << p.credit << " | Bet: " << bet << endl;
+        cout << "Press Enter to Spin (or type '0' to exit)...";
+        
+        cin.ignore(); // ล้างบัฟเฟอร์
+        if(cin.get() == '0') break; // ให้ทางออกผู้เล่นกลับไปหน้าเมนูหลัก
 
-        balance -= bet;
+        p.credit -= bet; // หักเงินจริง
         int multiplier = 1;
         int totalWin = 0;
         bool hasWin = true;
@@ -67,7 +77,6 @@ int main() {
             hasWin = false;
             vector<vector<Symbol>> board(3, vector<Symbol>(3));
             
-            // สุ่มสัญลักษณ์ลงกระดาน 
             for(int i=0; i<3; i++)
                 for(int j=0; j<3; j++) board[i][j] = spinSymbol();
 
@@ -76,9 +85,9 @@ int main() {
             // ตรวจรางวัล
             for (int i = 0; i < 3; i++) {
                 if (board[i][0].name == board[i][1].name && board[i][1].name == board[i][2].name) {
-                    int win = board[i][0].value * multiplier;
+                    int win = (board[i][0].value * bet) * multiplier; // ปรับรางวัลตามยอด Bet
                     totalWin += win;
-                    hasWin = true; // ถ้าชนะ จะเกิด Combo (หล่นใหม่)
+                    hasWin = true; 
                     cout << ">> WIN! " << board[i][0].name << " get " << win << "!" << endl;
                 }
             }
@@ -86,19 +95,25 @@ int main() {
             if (hasWin) {
                 multiplier++;
                 cout << "COMBO! Multiplier increases to x" << multiplier << endl;
-                Sleep(2000);
+                Sleep(1500); // ลดเวลาลงนิดนึงให้เกมลื่นขึ้น
             }
         }
 
+        // 4. สรุปผลเข้า Profile ผู้เล่น
         if (totalWin > 0) {
             cout << "TOTAL WIN THIS ROUND: " << totalWin << endl;
-            balance += totalWin;
+            p.credit += totalWin; // เพิ่มเงินคืนเข้ากระเป๋าหลัก
+            p.win_count++;
         } else {
             cout << "No win this time." << endl;
+            p.loss_count++;
         }
         cout << "----------------------------" << endl;
     }
 
-    cout << "Game Over! You're out of balance." << endl;
-    return 0;
+    if (p.credit < bet) {
+        cout << "Game Over! You're out of balance." << endl;
+    }
 }
+
+#endif

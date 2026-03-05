@@ -1,10 +1,10 @@
+#ifndef BINGO_H //เช็กว่าเคยอ่านหรือยัง
+#define BINGO_H //ถ้ายัง ให้ประว่าอ่านแล้ว
 #include<iostream>
 #include<ctime>
 #include<iomanip>
 #include<string>
 #include<vector>
-#ifndef BINGO_H //เช็กว่าเคยอ่านหรือยัง
-#define BINGO_H //ถ้ายัง ให้ประว่าอ่านแล้ว
 #include "Player.h"
 
 using namespace std;
@@ -29,7 +29,6 @@ class bingo
 
     void randnum(int [],int &); //สุ่มเลขที่ออก
 
-// เปลี่ยนจาก int main() เป็นฟังก์ชันนี้
 void playBingo(Player &p){ 
     double bet;
     cout << "\n--- Welcome to BINGO ---" << endl;
@@ -52,7 +51,6 @@ void playBingo(Player &p){
     //set enemy
     enemy.setscorefalse(enemy.dataS);
     enemy.randbingo(enemy.dataP);
-    // enemy.show_table(enemy.player_peper); <-- ผมแนะนำให้ซ่อนกระดาษศัตรูไว้ก่อนเดี๋ยวผู้เล่นโกง 555
     
     //set player
     player.setscorefalse(player.dataS);
@@ -64,7 +62,7 @@ void playBingo(Player &p){
     cout << "do you want to pick another table?  [1]yes [2]no" << endl;
     cin >> ans;
     do{
-        if(ans == "yes" || ans == "1"){ // แอบแก้ให้รับเลข 1 ได้ด้วย
+        if(ans == "yes" || ans == "1"){
             player.randbingo(player.dataP);
             player.show_table(player.player_peper);
             cout << "do you want to pick another table?  [1]yes [2]no" << endl;
@@ -89,7 +87,6 @@ void playBingo(Player &p){
     }
 
     //เริ่มเกมจนกว่าจะชนะ
-    // เนื่องจากลูปเดิมเพื่อนใช้ getline มันจะตีกับ cin ข้างบน ผมขอแก้เป็นให้กด Enter ไปเรื่อยๆ 
     cout << "Press Enter to start drawing numbers!" << endl;
     cin.ignore(); // ล้างบัฟเฟอร์
 

@@ -1,7 +1,8 @@
-#include<iostream>
-#include<string>
 #ifndef PLAYER_H //เช็กว่าเคยอ่านหรือยัง
 #define PLAYER_H //ถ้ายัง ให้จดไว้ว่าอ่านแล้ว
+#include<iostream>
+#include<string>
+
 
 using namespace std;
 

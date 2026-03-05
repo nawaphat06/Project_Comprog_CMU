@@ -2,6 +2,7 @@
 #include <string>
 #include "Player.h"
 #include "bingo.h" // ต้องดึงไฟล์เกมของเพื่อนเข้ามาด้วย
+#include "slotgame.h"
 
 // func เรียกเกม (ประกาศแบบรับ Player ทั้งก้อน)
 void playBlackjack(Player &p);
@@ -41,13 +42,16 @@ int main(){
         // ส่ง p1 ไปแบบ Reference ทั้งก้อนเลย ชีวิตจะง่ายขึ้นครับ
         switch (choice) {
             case 1:
+                cin.ignore();
                 playBlackjack(p1);
                 break;
             case 2:
-                playSlot(p1);
+            cin.ignore();
+                playHilo(p1);
                 break;
             case 3:
-                playHilo(p1);
+                cin.ignore();
+                playSlot(p1);
                 break;
             case 4:
                 cin.ignore(); // ล้างบัฟเฟอร์ Enter ก่อนเข้าเกมบิงโก
@@ -65,4 +69,3 @@ int main(){
 // ปล่อยเกมที่เหลือไว้รอเพื่อนส่งมา
 void playBlackjack(Player &p){ cout << "Coming soon\n"; }
 void playSlot(Player &p){ cout << "Coming soon\n"; }
-void playHilo(Player &p){ cout << "Coming soon\n"; }
