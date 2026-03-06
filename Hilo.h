@@ -1,209 +1,195 @@
-#ifndef HILO_H
-#define HILO_H
+#ifndef HILO_UI_H
+#define HILO_UI_H
 
-#include <iostream>
-#include <cstdlib>
-#include <ctime>
-#include <string>
+#include "raylib.h"
 #include "Player.h"
+#include <string>
+#include <vector>
+#include <ctime>
 
 using namespace std;
 
-inline int rollDice() {
-    return rand() % 6 + 1;
-}
+// --- ลอจิกการทอยเต๋า ---
+inline int rollDiceLogic() { return rand() % 6 + 1; }
 
-void playHilo(Player &p) {
-    double &money = p.credit; 
-    
-    int bet;
-    int choice;
+void playHiloUI(Player &p) {
+    const int screenWidth = 1280;
+    const int screenHeight = 720;
+
+    // --- ตัวแปรสถานะเกม ---
+    int bet = 50;
+    int choice = 1;      // 1: High/Low, 2: Triple, 3: Sum
+    int hlChoice = 1;    // 1: Low, 2: High
+    int guessTriple = 1; // 1-6
+    int guessSum = 10;   // 3-18
+    int luckyNumber = 1; // 1-6
     int winStreak = 0;
-    bool play = true; 
-
-    while (play && money > 0) {
-        cout << "\n================================";
-        cout << "\n       WELCOME TO HI-LO        ";
-        cout << "\n================================";
-        cout << "\nCredits: " << money;
-        cout << "\nEnter bet (Type 0 to Exit to Menu): ";
-        cin >> bet;
-        
-        // จุดที่ 1: หน้าวางเดิมพัน (ยังไม่เริ่มเกม กด 0 ไม่เสียตัง)
-        if (bet == 0) break;
-
-        if (cin.fail() || bet < 0 || bet > money) { 
-            cin.clear();
-            cin.ignore(10000, '\n');
-            cout << "\n[System] Invalid bet amount!\n";
-            continue;
-        }
-
-        cout << "\n1. High / Low\n2. Triple\n3. Sum\n0. Exit to Menu";
-        cout << "\nChoose option: ";
-        cin >> choice;
-
-        if (cin.fail()) {
-            cin.clear(); cin.ignore(10000, '\n');
-            cout << "\n[System] Invalid input!\n";
-            continue;
-        }
-
-        // จุดที่ 2: เริ่มเกมแล้ว (กด 0 คือยอมแพ้ หักเงินทันที)
-        if (choice == 0) {
-            cout << "\n[System] You exit the game! Bet is lost.\n";
-            money -= bet; // หักเงิน
-            p.loss_count++; // เพิ่มสถิติแพ้
-            break;
-        }
-
-        int hl = 0;
-        int guessTriple = 0;
-        int guessSum = 0;
-        bool forfeit = false; // forfeit = Exit
-
-        switch (choice) {
-            case 1:
-                cout << "\n1. Low (4-10)\n2. High (11-17)\n0. Exit";
-                cout << "\nChoose (1 or 2): ";
-                cin >> hl;
-                if (hl == 0) forfeit = true;
-                else if (hl != 1 && hl != 2) { cout << "\nInvalid choice!\n"; continue; }
-                break;
-            case 2:
-                cout << "\nGuess triple number (1-6, 0 to Exit): ";
-                cin >> guessTriple;
-                if (guessTriple == 0) forfeit = true;
-                else if (guessTriple < 1 || guessTriple > 6) { cout << "\nInvalid choice!\n"; continue; }
-                break;
-            case 3:
-                cout << "\nGuess sum (3-18, 0 to Exit): ";
-                cin >> guessSum;
-                if (guessSum == 0) forfeit = true;
-                else if (guessSum < 3 || guessSum > 18) { cout << "\nInvalid choice!\n"; continue; }
-                break;
-            default:
-                cout << "\n[System] Invalid choice!\n";
-                continue;
-        }
-
-        // จุดที่ 3: เช็คว่ากดยอมแพ้จากตอนเลือกฝั่งหรือไม่
-        if (forfeit) {
-            cout << "\n[System] You exit the game! Bet is lost.\n";
-            money -= bet;
-            p.loss_count++;
-            break;
-        }
     
-        int luckyNumber;
-        while (true) {
-            cout << "\nChoose Lucky Number (1-6, 0 to Exit): ";
-            cin >> luckyNumber;
-            
-            if (cin.fail()) { 
-                cin.clear(); cin.ignore(10000, '\n'); 
-                continue; 
+    int dice[3] = {1, 1, 1};
+    bool isRolling = false;
+    float rollTimer = 0.0f;
+    string sysMsg = "Adjust Bet, select Mode/Lucky No, then ROLL!";
+    Color msgColor = RAYWHITE;
+
+    // --- พิกัดปุ่มหลัก ---
+    Rectangle btnRoll     = { 540, 620, 200, 60 };
+    Rectangle btnBetMinus = { 530, 520, 50, 50 }; 
+    Rectangle btnBetPlus  = { 700, 520, 50, 50 }; 
+    Rectangle btnBack     = { 30, 30, 100, 40 };
+
+    while (!WindowShouldClose()) {
+        Vector2 mousePos = GetMousePosition();
+        bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+
+        if (!isRolling) {
+            if (isClick) {
+                // 1. ระบบปรับ Bet
+                if (CheckCollisionPointRec(mousePos, btnBetMinus) && bet > 10) bet -= 10;
+                if (CheckCollisionPointRec(mousePos, btnBetPlus) && bet + 10 <= p.credit) bet += 10;
+
+                // 2. เลือกโหมด (พิกัด X ใหม่: 400, 610, 820)
+                if (CheckCollisionPointRec(mousePos, { 400, 280, 180, 50 })) choice = 1;
+                if (CheckCollisionPointRec(mousePos, { 610, 280, 180, 50 })) choice = 2;
+                if (CheckCollisionPointRec(mousePos, { 820, 280, 180, 50 })) choice = 3;
+
+                // 3. ปรับค่าโหมดรายย่อย
+                if (choice == 1) {
+                    if (CheckCollisionPointRec(mousePos, { 440, 345, 150, 40 })) hlChoice = 1;
+                    if (CheckCollisionPointRec(mousePos, { 690, 345, 150, 40 })) hlChoice = 2;
+                } else if (choice == 2) {
+                    for(int i=1; i<=6; i++) 
+                        if (CheckCollisionPointRec(mousePos, { 350.0f+(i*80), 345, 60, 40 })) guessTriple = i;
+                } else if (choice == 3) {
+                    if (CheckCollisionPointRec(mousePos, { 540, 345, 60, 40 }) && guessSum > 3) guessSum--;
+                    if (CheckCollisionPointRec(mousePos, { 700, 345, 60, 40 }) && guessSum < 18) guessSum++;
+                }
+
+                // 4. เลือก Lucky Number
+                for(int i=1; i<=6; i++)
+                    if (CheckCollisionPointRec(mousePos, { 350.0f+(i*80), 430, 60, 40 })) luckyNumber = i;
+
+                // 5. ปุ่มเริ่มทอย
+                if (CheckCollisionPointRec(mousePos, btnRoll)) {
+                    if (p.credit >= bet && bet > 0) {
+                        isRolling = true;
+                        rollTimer = 0.0f;
+                        sysMsg = "Shaking...";
+                    }
+                }
+
+                // 6. ปุ่มกลับเมนูหลัก
+                if (CheckCollisionPointRec(mousePos, btnBack)) return;
             }
-
-            if (luckyNumber == 0) {
-                forfeit = true;
-                break;
-            }
-            if (luckyNumber >= 1 && luckyNumber <= 6) break;
-            else cout << "\n[System] Invalid! Enter 1-6 only.\n";
-        }
-
-        // จุดที่ 4: เช็คว่ากดยอมแพ้จากตอนเลือกเลขนำโชคหรือไม่
-        if (forfeit) {
-            cout << "\n[System] You exit the game! Bet is lost.\n";
-            money -= bet;
-            p.loss_count++;
-            break;
-        }
-        
-        string dummy;
-        cout << "\nPress Enter to roll the dice (or type '0' to Exit)...";
-        cin.ignore(1000, '\n');
-        getline(cin, dummy);
-
-        // จุดที่ 5: หน้าสุดท้ายก่อนทอยเต๋า ถ้าเปลี่ยนใจก็หักเงินเช่นกัน
-        if (dummy == "0") {
-            cout << "\n[System] You exit the game! Bet is lost.\n";
-            money -= bet;
-            p.loss_count++;
-            break;
-        }
-
-        int d1 = rollDice();
-        int d2 = rollDice();
-        int d3 = rollDice();
-        int sum = d1 + d2 + d3;
-
-        cout << "\n--------------------------------";
-        cout << "\nDice Result: " << d1 << " - " << d2 << " - " << d3;
-        cout << " (Sum = " << sum << ")";
-        cout << "\n--------------------------------\n";
-      
-        bool win = false;
-        int reward = 0;
-
-        if (choice == 1) {
-            if (!(d1 == d2 && d2 == d3)) {
-                if (hl == 1 && sum >= 4 && sum <= 10) { win = true; reward = bet * 2; }
-                else if (hl == 2 && sum >= 11 && sum <= 17) { win = true; reward = bet * 2; }
-            }
-        }
-        else if (choice == 2) {
-            if (d1 == d2 && d2 == d3 && d1 == guessTriple) { win = true; reward = bet * 5; }
-        }
-        else if (choice == 3) {
-            if (sum == guessSum) { win = true; reward = bet * 3; }
-        }
-
-        int luckyCount = 0;
-        if (d1 == luckyNumber) luckyCount++;
-        if (d2 == luckyNumber) luckyCount++;
-        if (d3 == luckyNumber) luckyCount++;
-
-        if (luckyCount > 0) cout << "Lucky Match! +x" << luckyCount << " Bonus!\n";
-
-        int luckyBonus = luckyCount * bet;
-       
-        if (win) {
-            cout << ">>> YOU WIN! <<<\n";
-            money += (reward - bet);
-            winStreak++;
-            p.win_count++;
         } else {
-            cout << ">>> YOU LOSE! <<<\n";
-            money -= bet;
-            winStreak = 0;
-            p.loss_count++;
+            rollTimer += GetFrameTime();
+            dice[0] = rollDiceLogic(); dice[1] = rollDiceLogic(); dice[2] = rollDiceLogic();
+            if (rollTimer >= 1.5f) {
+                isRolling = false;
+                int sum = dice[0] + dice[1] + dice[2];
+                bool win = false; int reward = 0;
+
+                if (choice == 1) {
+                    if (!(dice[0] == dice[1] && dice[1] == dice[2])) {
+                        if (hlChoice == 1 && sum >= 4 && sum <= 10) { win = true; reward = bet * 2; }
+                        else if (hlChoice == 2 && sum >= 11 && sum <= 17) { win = true; reward = bet * 2; }
+                    }
+                } else if (choice == 2) {
+                    if (dice[0] == dice[1] && dice[1] == dice[2] && dice[0] == guessTriple) { win = true; reward = bet * 5; }
+                } else if (choice == 3) {
+                    if (sum == guessSum) { win = true; reward = bet * 3; }
+                }
+
+                int luckyCount = 0;
+                for(int i=0; i<3; i++) if (dice[i] == luckyNumber) luckyCount++;
+
+                if (win) {
+                    p.credit += (reward - bet); winStreak++; p.win_count++;
+                    sysMsg = TextFormat("WIN! +$%d", reward); msgColor = GREEN;
+                } else {
+                    p.credit -= bet; winStreak = 0; p.loss_count++;
+                    sysMsg = "LOSE!"; msgColor = RED;
+                }
+                p.credit += (luckyCount * bet);
+            }
         }
 
-        if (luckyCount > 0) money += luckyBonus;
+        BeginDrawing();
+        ClearBackground(Color{ 0, 80, 0, 255 });
 
-        if (winStreak == 2) {
-            cout << "Bonus: 2x Win Streak (+10%)\n";
-            money += bet * 0.1;
+        // --- หัวข้อ ---
+        DrawText("HI-LO CASINO", (screenWidth - MeasureText("HI-LO CASINO", 40)) / 2, 20, 40, GOLD);
+        DrawText(TextFormat("Credits: $%.2f | Streak: %d", p.credit, winStreak), (screenWidth - MeasureText(TextFormat("Credits: $%.2f | Streak: %d", p.credit, winStreak), 25)) / 2, 70, 25, WHITE);
+
+        // --- ลูกเต๋า ---
+        for (int i = 0; i < 3; i++) {
+            int posX = 440 + (i * 150);
+            DrawRectangle(posX, 120, 100, 100, RAYWHITE);
+            DrawText(TextFormat("%d", dice[i]), posX + 35, 140, 60, BLACK);
         }
-        else if (winStreak >= 3) {
-            cout << "Bonus: " << winStreak << "x Win Streak (+20%)\n";
-            money += bet * 0.2;
+        DrawText(sysMsg.c_str(), (screenWidth - MeasureText(sysMsg.c_str(), 25)) / 2, 240, 25, msgColor);
+
+        // --- 1. SELECT MODE ---
+        DrawText("1. SELECT MODE:", 180, 290, 20, WHITE);
+        
+        Rectangle rMode1 = { 400, 280, 180, 50 }; 
+        DrawRectangleRec(rMode1, (choice == 1) ? GOLD : (CheckCollisionPointRec(mousePos, rMode1) ? LIGHTGRAY : GRAY));
+        DrawText("High/Low", 440, 295, 20, BLACK);
+
+        Rectangle rMode2 = { 610, 280, 180, 50 }; 
+        DrawRectangleRec(rMode2, (choice == 2) ? GOLD : (CheckCollisionPointRec(mousePos, rMode2) ? LIGHTGRAY : GRAY));
+        DrawText("Triple", 665, 295, 20, BLACK);
+
+        Rectangle rMode3 = { 820, 280, 180, 50 }; 
+        DrawRectangleRec(rMode3, (choice == 3) ? GOLD : (CheckCollisionPointRec(mousePos, rMode3) ? LIGHTGRAY : GRAY));
+        DrawText("Sum", 885, 295, 20, BLACK);
+
+        // --- รายละเอียด Mode ---
+        if (choice == 1) {
+            Rectangle rHL1 = { 440, 345, 150, 40 };
+            DrawRectangleRec(rHL1, (hlChoice == 1) ? ORANGE : (CheckCollisionPointRec(mousePos, rHL1) ? LIGHTGRAY : GRAY));
+            DrawText("LOW", 495, 355, 20, BLACK);
+            Rectangle rHL2 = { 690, 345, 150, 40 };
+            DrawRectangleRec(rHL2, (hlChoice == 2) ? ORANGE : (CheckCollisionPointRec(mousePos, rHL2) ? LIGHTGRAY : GRAY));
+            DrawText("HIGH", 740, 355, 20, BLACK);
+        } else if (choice == 2) {
+            for(int i=1; i<=6; i++) {
+                Rectangle rTrip = { 350.0f+(i*80), 345, 60, 40 };
+                DrawRectangleRec(rTrip, (guessTriple == i) ? ORANGE : (CheckCollisionPointRec(mousePos, rTrip) ? LIGHTGRAY : GRAY));
+                DrawText(TextFormat("%d", i), 375.0f+(i*80), 355, 20, BLACK);
+            }
+        } else if (choice == 3) {
+            Rectangle rMinus = { 540, 345, 60, 40 };
+            DrawRectangleRec(rMinus, CheckCollisionPointRec(mousePos, rMinus) ? LIGHTGRAY : GRAY);
+            DrawText("-", 565, 350, 30, BLACK);
+            DrawText(TextFormat("SUM: %d", guessSum), 610, 355, 25, YELLOW);
+            Rectangle rPlus = { 700, 345, 60, 40 };
+            DrawRectangleRec(rPlus, CheckCollisionPointRec(mousePos, rPlus) ? LIGHTGRAY : GRAY);
+            DrawText("+", 720, 350, 30, BLACK);
         }
 
-        cout << "\n--- UPDATED STATS ---";
-        p.showProfile();
-        cout << "---------------------\n";
+        // --- 2. LUCKY NO ---
+        DrawText("2. LUCKY NO:", 180, 440, 20, SKYBLUE);
+        for(int i=1; i<=6; i++) {
+            Rectangle rLucky = { 350.0f+(i*80), 430, 60, 40 };
+            DrawRectangleRec(rLucky, (luckyNumber == i) ? SKYBLUE : (CheckCollisionPointRec(mousePos, rLucky) ? LIGHTGRAY : GRAY));
+            DrawText(TextFormat("%d", i), 375.0f+(i*80), 440, 20, BLACK);
+        }
 
-        cout << "Play again? (1: Yes / 0: Exit to Menu): ";
-        cin >> play;
-        if (play == 0) break;
-    }
+        // --- 3. BET AMOUNT ---
+        DrawText("3. BET AMOUNT:", 180, 535, 20, PINK);
+        DrawRectangleRec(btnBetMinus, CheckCollisionPointRec(mousePos, btnBetMinus) ? LIGHTGRAY : GRAY); 
+        DrawText("-", btnBetMinus.x + 18, btnBetMinus.y + 10, 30, BLACK);
+        DrawText(TextFormat("$ %d", bet), 605, 530, 30, WHITE);
+        DrawRectangleRec(btnBetPlus, CheckCollisionPointRec(mousePos, btnBetPlus) ? LIGHTGRAY : GRAY); 
+        DrawText("+", btnBetPlus.x + 15, btnBetPlus.y + 10, 30, BLACK);
 
-    if (money <= 0) {
-        cout << "\n[System] Game Over: Out of money!\n";
-        p.showProfile();
+        // --- ROLL & BACK ---
+        DrawRectangleRec(btnRoll, isRolling ? DARKGRAY : (CheckCollisionPointRec(mousePos, btnRoll) ? LIGHTGRAY : GRAY));
+        DrawText("ROLL DICE", btnRoll.x + 40, btnRoll.y + 15, 25, BLACK);
+        DrawRectangleRec(btnBack, MAROON); 
+        DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
+
+        EndDrawing();
     }
 }
 

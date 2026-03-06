@@ -1,96 +1,78 @@
 #include <iostream>
 #include <string>
-#include <windows.h> // จำเป็นต้องใช้สำหรับ SetConsoleOutputCP
 
+// นำเข้าข้อมูลผู้เล่น
 #include "Player.h"
+
+#include "raylib.h"
+
+// นำเข้าไฟล์ UI ของแต่ละเกม
+#include "slot.h" 
+#include "hilo.h" 
+#include "blackjack.h" 
 #include "bingo.h" 
-#include "slotgame.h"
-#include "blackjack.h"
-#include "Hilo.h"
+
 
 using namespace std;
 
-int main(){
-    SetConsoleOutputCP(CP_UTF8); //ทำให้ภาษาไทยไม่เพี้ยน
-    //รับชื่อ + ต้อนรับ
-    string name;
-    cout << "Welcome to Casino Simulator" << endl;
-    cout << "Please enter your name: ";
-    getline(cin, name);
+int main() {
+    // 1. ตั้งค่าหน้าต่างโปรแกรม
+    const int screenWidth = 1280;
+    const int screenHeight = 720;
+    InitWindow(screenWidth, screenHeight, "Asstecs Casino - Final Edition");
+    SetTargetFPS(60);
 
-    //set_starter_Stat
-    Player p1(name, 1000.0, 0, 0); 
+    // 2. สร้างตัวละครผู้เล่น
+    Player p1("Guest Player", 1000.0, 0, 0);
 
-    //Main loop
-    int choice;
-    while(true){
+    // 3. กำหนดพิกัดปุ่มเมนูหลัก
+    Rectangle btnSlot      = { 490, 240, 300, 55 };
+    Rectangle btnHilo      = { 490, 310, 300, 55 };
+    Rectangle btnBlackjack = { 490, 380, 300, 55 };
+    Rectangle btnBingo     = { 490, 450, 300, 55 };
+    Rectangle btnExit      = { 490, 540, 300, 55 };
+
+    while (!WindowShouldClose()) {
+        Vector2 mousePos = GetMousePosition();
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            if (CheckCollisionPointRec(mousePos, btnSlot))      playSlotUI(p1); 
+            if (CheckCollisionPointRec(mousePos, btnHilo))      playHiloUI(p1); 
+            if (CheckCollisionPointRec(mousePos, btnBlackjack)) playBlackjackUI(p1); 
+            if (CheckCollisionPointRec(mousePos, btnBingo))     playBingoUI(p1); 
+            if (CheckCollisionPointRec(mousePos, btnExit))      break;
+        }
+
+        BeginDrawing();
+        ClearBackground(DARKGREEN); 
         
-        // --- เช็คเงินหมด (Bankrupt / Game Over) ---
-        if (p1.credit <= 0) {
-            cout << "\n========================================" << endl;
-            cout << "          BANKRUPT! GAME OVER           " << endl;
-            cout << "========================================" << endl;
-            cout << "คุณหมดตัวแล้ว " << p1.name << "!" << endl;
-            cout << "Final Stats -> Wins: " << p1.win_count << " | Losses: " << p1.loss_count << endl;
-            cout << "\nต้องการเริ่มเกมใหม่หรือไม่?" << endl;
-            cout << "1. เล่นใหม่ (รีเซ็ตเงินเป็น 1000)" << endl;
-            cout << "0. ยอมแพ้และออกจากเกม" << endl;
-            cout << "Select option: ";
-            
-            int restart;
-            cin >> restart;
-            
-            if (restart == 1) {
-                p1.credit = 1000.0; 
-                p1.win_count = 0;
-                p1.loss_count = 0;
-                cout << "\n[System] รีเซ็ตบัญชีเรียบร้อย ขอให้โชคดี!" << endl;
-                cin.ignore(1000, '\n'); // เคลียร์บัฟเฟอร์กันข้ามบรรทัด
-                continue; // วนกลับไปเริ่มแสดงเมนูใหม่
-            } else {
-                cout << "\nGoodbye! See you next time." << endl;
-                break; // จบโปรแกรม
-            }
-        }
-        // ------------------------------------------
+        const char* title = "ASSTECS CASINO HUB";
+        DrawText(title, (screenWidth - MeasureText(title, 50)) / 2, 60, 50, GOLD);
+        
+        DrawText(TextFormat("Welcome: %s", p1.name.c_str()), 490, 140, 25, RAYWHITE);
+        DrawText(TextFormat("Total Credits: $%.2f", p1.credit), 490, 180, 30, YELLOW);
 
-        p1.showProfile();
-        cout << "=== MAIN HUB ===" << endl;
-        cout << "พิมพ์ตัวเลขเพื่อเข้าเล่นแต่ละเกม" << endl;
-        cout << "1. Play Blackjack" << endl;
-        cout << "2. Play Slot" << endl;
-        cout << "3. Play Hi-Lo" << endl;
-        cout << "4. Play Bingo" << endl;
-        cout << "พิมพ์ 0 เพื่อออกจาก game" << endl;
-        cout << "Select option: ";
-        cin >> choice;
+        // วาดปุ่มต่างๆ
+        DrawRectangleRec(btnSlot, CheckCollisionPointRec(mousePos, btnSlot) ? LIGHTGRAY : GRAY);
+        DrawText("PLAY SLOT MACHINE", btnSlot.x + 45, btnSlot.y + 18, 20, BLACK);
 
-        if (choice == 0) {
-            cout << "Goodbye! See you next time." << endl;
-            break;
-        }
+        DrawRectangleRec(btnHilo, CheckCollisionPointRec(mousePos, btnHilo) ? LIGHTGRAY : GRAY);
+        DrawText("PLAY HI-LO GAME", btnHilo.x + 60, btnHilo.y + 18, 20, BLACK);
 
-        // ล้างบัฟเฟอร์ Enter ก่อนเข้าเกม
-        cin.ignore();
+        DrawRectangleRec(btnBlackjack, CheckCollisionPointRec(mousePos, btnBlackjack) ? LIGHTGRAY : GRAY);
+        DrawText("PLAY BLACKJACK 21", btnBlackjack.x + 50, btnBlackjack.y + 18, 20, BLACK);
 
-        // ส่ง p1 ไปแบบ Reference ทั้งก้อน
-        switch (choice) {
-            case 1:
-                playBlackjack(p1);
-                break;
-            case 2:
-                playSlot(p1);
-                break;
-            case 3:
-                playHilo(p1);
-                break;
-            case 4:
-                playBingo(p1);
-                break;    
-            default:
-                cout << "\n[System] Invalid option!" << endl;
-        }
+        DrawRectangleRec(btnBingo, CheckCollisionPointRec(mousePos, btnBingo) ? LIGHTGRAY : GRAY);
+        DrawText("PLAY BINGO BONANZA", btnBingo.x + 40, btnBingo.y + 18, 20, BLACK);
+
+        DrawRectangleRec(btnExit, CheckCollisionPointRec(mousePos, btnExit) ? MAROON : RED);
+        DrawText("EXIT PROGRAM", btnExit.x + 75, btnExit.y + 18, 20, WHITE);
+
+        DrawText(TextFormat("Lifetime Wins: %d | Lifetime Losses: %d", p1.win_count, p1.loss_count), (screenWidth - MeasureText(TextFormat("Lifetime Wins: %d | Lifetime Losses: %d", p1.win_count, p1.loss_count), 20)) / 2, 660, 20, LIGHTGRAY);
+
+        EndDrawing();
     }
 
+    CloseWindow();
     return 0;
 }

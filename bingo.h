@@ -1,308 +1,201 @@
 #ifndef BINGO_H 
 #define BINGO_H 
-#include<iostream>
-#include<ctime>
-#include<iomanip>
-#include<string>
-#include<vector>
+
+#include "raylib.h"
 #include "Player.h"
+#include <vector>
+#include <string>
+#include <ctime>
+#include <algorithm>
 
 using namespace std;
 
-class bingo
-{
-    public:
-        int wincount = 0;
-        int type_win;
-        int player_peper[5][5];
-        int *dataP = player_peper[0];
-        bool score[5][5];
-        bool *dataS = score[0];
-        void randbingo(int *); 
-        template<class T>
-        void show_table(T [][5]); 
-        void showsetnum(int [],int); 
-        void setscorefalse(bool *); 
-        void check(int [][5],bool [][5],int [],int); 
-        bool checkscore(bool *,int &,int); 
+// --- โครงสร้าง Logic เกม Bingo ---
+class BingoGame {
+public:
+    int player_paper[5][5];
+    int enemy_paper[5][5];
+    bool player_score[5][5];
+    bool enemy_score[5][5];
+    int win_type; // 0: row, 1: cross, 2: column
+
+    void randbingo(int table[5][5]) {
+        vector<int> nums;
+        for(int i=1; i<=99; i++) nums.push_back(i);
+        
+        int n = nums.size();
+        for (int i = n - 1; i > 0; i--) {
+            int j = rand() % (i + 1);
+            swap(nums[i], nums[j]);
+        }
+
+        for(int i=0; i<5; i++) {
+            for(int j=0; j<5; j++) table[i][j] = nums[i * 5 + j];
+        }
+        table[2][2] = 0; 
+    }
+
+    void checkMatch(int table[5][5], bool score[5][5], int drawnNum) {
+        for(int i=0; i<5; i++) {
+            for(int j=0; j<5; j++) {
+                if(table[i][j] == drawnNum) score[i][j] = true;
+            }
+        }
+        score[2][2] = true; 
+    }
+
+    bool checkWin(bool s[5][5], int type) {
+        if(type == 0) { 
+            for(int i=0; i<5; i++) if(s[i][0] && s[i][1] && s[i][2] && s[i][3] && s[i][4]) return true;
+        } else if(type == 1) { 
+            if(s[0][0] && s[1][1] && s[2][2] && s[3][3] && s[4][4]) return true;
+            if(s[0][4] && s[1][3] && s[2][2] && s[3][1] && s[4][0]) return true;
+        } else if(type == 2) { 
+            for(int i=0; i<5; i++) if(s[0][i] && s[1][i] && s[2][i] && s[3][i] && s[4][i]) return true;
+        }
+        return false;
+    }
 };
 
-    void randnum(int [],int &); 
+void playBingoUI(Player &p) {
+    const int screenWidth = 1280;
+    const int screenHeight = 720;
+    float centerX = screenWidth / 2.0f; // จุดกึ่งกลางหน้าจอ
 
-void playBingo(Player &p){ 
-    double bet;
-    cout << "\n--- Welcome to BINGO ---" << endl;
-    cout << "Credits: " << p.credit << endl;
-    cout << "Enter your bet (Type 0 to Exit to Menu): "; 
-    cin >> bet;
-    
-    // จุดออกที่ 1: เปลี่ยนใจไม่เล่นตั้งแต่หน้าวางเงิน (ไม่เสียเงิน)
-    if(bet == 0) return; 
+    BingoGame game;
+    int bet = 50;
+    bool isPlaying = false;
+    bool gameOver = false;
+    int lastBall = 0;
+    vector<int> ballPool;
+    string sysMsg = "Set your Bet and DEAL to get a card!";
+    Color msgColor = RAYWHITE;
 
-    if(cin.fail() || bet < 0){
-        cin.clear();
-        cin.ignore(10000, '\n');
-        cout << "[System] Invalid bet amount!" << endl;
-        return;
-    }
+    // --- ปรับพิกัดปุ่มสำหรับการคลิก (Collision) ---
+    Rectangle btnDeal  = { centerX - 100, 600, 200, 60 }; 
+    Rectangle btnDraw  = { 950, 450, 200, 60 }; 
+    Rectangle btnMinus = { centerX - 125, 520, 50, 50 }; // ขยับปุ่มลบไปทางซ้าย
+    Rectangle btnPlus  = { centerX + 75, 520, 50, 50 };  // ขยับปุ่มบวกไปทางขวา
+    Rectangle btnBack  = { 30, 30, 100, 40 };
 
-    if(p.credit < bet) {
-        cout << "Not enough credits!" << endl;
-        return; 
-    }
-    p.credit -= bet; // หักเงินเดิมพัน! ตั้งแต่จุดนี้ไปถ้ากดออกคือเสียเงิน
+    while (!WindowShouldClose()) {
+        Vector2 mousePos = GetMousePosition();
+        bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 
-    bingo player;
-    bingo enemy;
-    int setnum[100];
-    int count = 0;
-    srand(time(0));
-    
-    enemy.setscorefalse(enemy.dataS);
-    enemy.randbingo(enemy.dataP);
-    cout << "enemy table" << endl;
-    enemy.show_table(enemy.player_peper);
-
-    player.setscorefalse(player.dataS);
-    player.randbingo(player.dataP);
-    cout << "you table" << endl;
-    player.show_table(player.player_peper);
-    
-    string ans;
-    cout << "do you want to pick another table?  [1]yes [2]no [0]Exit to Menu" << endl; 
-    cin >> ans;
-    
-    // จุดออกที่ 2: กดออกตอนเลือกกระดาษ (เสียเงิน เพราะเห็นกระดาษแล้ว)
-    if (ans == "0") {
-        cout << "\n[System] You Exit the game! Bet is lost." << endl;
-        p.loss_count++;
-        return;
-    }
-
-    do{
-        if(ans == "yes" || ans == "1"){
-            player.randbingo(player.dataP);
-            cout << "you table" << endl;
-            player.show_table(player.player_peper);
-            cout << "do you want to pick another table?  [1]yes [2]no [0]Exit to Menu" << endl;
-            cin >> ans;
-            
-            if (ans == "0") {
-                cout << "\n[System] You Exit the game! Bet is lost." << endl;
-                p.loss_count++;
-                return;
-            }
-        }else{
-            if(ans != "no" && ans != "2"){
-                cout << "please input (yes/no) or (1/2) or 0 to Exit" << endl;
-                cin >> ans;
+        if (!isPlaying && !gameOver) {
+            if (isClick) {
+                if (CheckCollisionPointRec(mousePos, btnMinus) && bet > 10) bet -= 10;
+                if (CheckCollisionPointRec(mousePos, btnPlus) && bet + 10 <= p.credit) bet += 10;
+                if (CheckCollisionPointRec(mousePos, btnBack)) return;
                 
-                if (ans == "0") {
-                    cout << "\n[System] You Exit the game! Bet is lost." << endl;
-                    p.loss_count++;
-                    return;
+                if (CheckCollisionPointRec(mousePos, btnDeal) && p.credit >= bet) {
+                    p.credit -= bet;
+                    game.randbingo(game.player_paper);
+                    game.randbingo(game.enemy_paper);
+                    for(int i=0; i<5; i++) for(int j=0; j<5; j++) {
+                        game.player_score[i][j] = false;
+                        game.enemy_score[i][j] = false;
+                    }
+                    game.win_type = rand() % 3;
+                    ballPool.clear();
+                    for(int i=1; i<=99; i++) ballPool.push_back(i);
+                    
+                    int n = ballPool.size();
+                    for (int i = n - 1; i > 0; i--) {
+                        int j = rand() % (i + 1);
+                        swap(ballPool[i], ballPool[j]);
+                    }
+                    
+                    isPlaying = true;
+                    msgColor = RAYWHITE;
+                    sysMsg = (game.win_type == 0) ? "MODE: ROW WIN" : (game.win_type == 1) ? "MODE: CROSS WIN" : "MODE: COLUMN WIN";
                 }
             }
-        }
-    }while(ans != "no" && ans != "2");
+        } else if (isPlaying) {
+            if (isClick && CheckCollisionPointRec(mousePos, btnDraw)) {
+                if (!ballPool.empty()) {
+                    lastBall = ballPool.back(); ballPool.pop_back();
+                    game.checkMatch(game.player_paper, game.player_score, lastBall);
+                    game.checkMatch(game.enemy_paper, game.enemy_score, lastBall);
 
-    player.type_win = rand()%3;
-    cout << "\nwin type is "; 
-    if(player.type_win == 0){
-        cout << "row win" << endl;
-    }else if(player.type_win == 1){
-        cout << "cross win" << endl;
-    }else{
-        cout << "colum win" << endl;
-    }
+                    bool pWin = game.checkWin(game.player_score, game.win_type);
+                    bool eWin = game.checkWin(game.enemy_score, game.win_type);
 
-    cout << "Press Enter to start drawing numbers! (or type '0' to Exit)" << endl;
-    cin.ignore(1000, '\n'); 
-
-    while(!player.checkscore(player.dataS,player.wincount,player.type_win) && !enemy.checkscore(enemy.dataS,enemy.wincount,player.type_win)){
-        getline(cin, ans); 
-        
-        // จุดออกที่ 3: ระหว่างกำลังสุ่มเลข (เสียเงิน)
-        if(ans == "0"){
-            cout << "\n[System] You Exit the game! Bet is lost." << endl;
-            p.loss_count++; 
-            return;
-        }
-        
-        randnum(setnum,count);
-        player.check(player.player_peper,player.score,setnum,count);
-        enemy.check(enemy.player_peper,enemy.score,setnum,count);
-        
-        cout << "enemy table" << endl;
-        enemy.show_table(enemy.score);
-        cout << "you table" << endl;
-        player.show_table(player.score);
-        cout << "Numbers drawn so far: ";
-        player.showsetnum(setnum,count);
-        cout << "Press Enter to draw next number(0 to Menu)" << endl;
-    }
-
-    cout << "\n==========================" << endl;
-    if(player.wincount > enemy.wincount){
-        cout << ">>> YOU WIN! <<<" << endl;
-        cout << "player score : " << player.wincount << endl;
-        
-        double prize = bet * 2; 
-        p.credit += prize;
-        p.win_count++;
-        cout << "You received " << prize << " credits!" << endl;
-    }else if(enemy.wincount > player.wincount){
-        cout << ">>> YOU LOSE! <<<" << endl;
-        cout << "enemy table" << endl;
-        enemy.show_table(enemy.score);
-        cout << "enemy score : " << enemy.wincount << endl;
-        
-        p.loss_count++;
-    } else {
-        cout << ">>> TIE! <<<" << endl;
-        cout << "player score: " << player.wincount << " | enemy score: " << enemy.wincount << endl;
-        p.credit += bet; 
-    }
-
-    cout << "\n--- UPDATED PROFILE ---" << endl;
-    p.showProfile();
-    cout << "-----------------------" << endl;
-    
-    cout << "Press Enter to return to Main Menu...";
-    getline(cin, ans);
-}
-
-// ---------------------------------------------------------
-// ด้านล่างนี้คือฟังก์ชันในคลาสของเพื่อนคุณ ไม่มีการแตะต้องใดๆ
-// ---------------------------------------------------------
-
-void bingo::randbingo(int *data){
-    bool unique;
-    for(int i=0;i<25;i++){
-        do{
-            *(data+i) = rand()%99+1;
-            unique =true;
-            for(int j=0;j<i;j++){
-                if(*(data+i) == *(data+j)){
-                    unique = false;
+                    if (pWin || eWin) {
+                        isPlaying = false; gameOver = true;
+                        if (pWin && !eWin) { p.credit += bet * 2; p.win_count++; sysMsg = "YOU BINGO! WINNER!"; msgColor = GREEN; }
+                        else if (eWin && !pWin) { p.loss_count++; sysMsg = "ENEMY BINGO! YOU LOSE."; msgColor = RED; }
+                        else { p.credit += bet; sysMsg = "TIE BINGO!"; msgColor = YELLOW; }
+                    }
                 }
             }
-        }while(!unique);
-    }
-    *(data+12) = 0;
-}
-
-template<class T>
-void bingo::show_table(T arr[][5]){
-    for(int i=0;i<5;i++){
-        for(int j=0;j<5;j++){
-            cout << setw(2) << arr[i][j] << " ";
+        } else {
+            if (isClick && CheckCollisionPointRec(mousePos, btnDeal)) { gameOver = false; sysMsg = "Adjust Bet and Deal!"; msgColor = RAYWHITE; }
+            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) return;
         }
-        cout << endl;
-    }
-    cout << "------------------------------------------------" << endl;
-}
 
-void bingo::showsetnum(int arr[],int N){
-    for(int i=0;i<N;i++){
-        cout << arr[i] << " ";
-    }
-    cout << endl;
-}
+        BeginDrawing();
+        ClearBackground(Color{ 20, 40, 80, 255 }); 
 
-void bingo::check(int inarr[][5],bool score[][5],int setnum[],int N){
-    for(int i=0;i<5;i++){
-        for(int j=0;j<5;j++){
-            if(inarr[i][j] == setnum[N-1]){
-                score[i][j] = true;
-            }
-        }
-    }
-    score[2][2] = true;
-}
+        DrawText("BINGO BONANZA", (screenWidth - MeasureText("BINGO BONANZA", 40)) / 2, 20, 40, GOLD);
+        DrawText(TextFormat("Credits: $%.2f", p.credit), 1050, 30, 25, RAYWHITE);
 
-void randnum(int arr[],int &count){
-    bool unique;
-    for(int i=0;i<count+1;i++){
-        do{
-            arr[count] = rand()%99+1;
-            unique = true;
-            for(int k=0;k<i;k++){
-                if(arr[k] == arr[i]){
-                    unique = false;
+        if (isPlaying || gameOver) {
+            DrawText("YOUR TABLE", 200, 80, 20, SKYBLUE);
+            for(int i=0; i<5; i++) {
+                for(int j=0; j<5; j++) {
+                    Rectangle r = { (float)150 + (j*75), (float)110 + (i*75), 70, 70 };
+                    DrawRectangleRec(r, game.player_score[i][j] ? ORANGE : RAYWHITE);
+                    if(game.player_paper[i][j] != 0)
+                        DrawText(TextFormat("%d", game.player_paper[i][j]), r.x + 35 - MeasureText(TextFormat("%d", game.player_paper[i][j]), 25)/2, r.y + 22, 25, DARKBLUE);
+                    else DrawText("F", r.x + 25, r.y + 25, 20, RED);
                 }
             }
-        }while(!unique);
-    }
-    count++;
-}
+            DrawText("ENEMY STATUS", 650, 80, 20, RED);
+            for(int i=0; i<5; i++) {
+                for(int j=0; j<5; j++) {
+                    Rectangle r = { (float)650 + (j*45), (float)110 + (i*45), 40, 40 };
+                    DrawRectangleRec(r, game.enemy_score[i][j] ? MAROON : GRAY);
+                }
+            }
+            DrawCircle(1050, 250, 70, RAYWHITE);
+            if(lastBall > 0) DrawText(TextFormat("%d", lastBall), 1050 - MeasureText(TextFormat("%d", lastBall), 50)/2, 225, 50, BLACK);
+        }
 
-void bingo::setscorefalse(bool *score){
-    for(int i=0;i<25;i++){
-        *(score+i) = false;
-    }
-}
+        // --- จุดที่แก้ไข: จัดวางข้อความและปุ่มไม่ให้ทับกัน ---
+        
+        // 1. วาดข้อความแจ้งเตือน (sysMsg) ให้อยู่เหนือแถบ Bet
+        DrawText(sysMsg.c_str(), centerX - (MeasureText(sysMsg.c_str(), 25) / 2.0f), 460, 25, msgColor);
 
-bool bingo::checkscore(bool *data,int &wincount,int type_win){
-    bool win = false;
-    //row win
-    if(type_win == 0){
-        if(*(data) && *(data+1) && *(data+2) && *(data+3) && *(data+4)){
-            win = true;
-            wincount++;
+        if (!isPlaying && !gameOver) {
+            // 2. วาดปุ่มลบ (-)
+            DrawRectangleRec(btnMinus, CheckCollisionPointRec(mousePos, btnMinus) ? LIGHTGRAY : GRAY); 
+            DrawText("-", btnMinus.x + 18, btnMinus.y + 8, 35, BLACK);
+            
+            // 3. วาดตัวเลข BET ไว้กึ่งกลางเป๊ะ
+            string betTxt = TextFormat("BET: %d", bet);
+            DrawText(betTxt.c_str(), centerX - (MeasureText(betTxt.c_str(), 30) / 2.0f), 530, 30, WHITE);
+            
+            // 4. วาดปุ่มเพิ่ม (+)
+            DrawRectangleRec(btnPlus, CheckCollisionPointRec(mousePos, btnPlus) ? LIGHTGRAY : GRAY); 
+            DrawText("+", btnPlus.x + 14, btnPlus.y + 8, 35, BLACK);
+            
+            // 5. ปุ่ม DEAL (พิกัด Y=600)
+            DrawRectangleRec(btnDeal, GOLD); 
+            DrawText("DEAL CARD", btnDeal.x + 35, btnDeal.y + 18, 25, BLACK);
+        } else if (isPlaying) {
+            DrawRectangleRec(btnDraw, SKYBLUE); 
+            DrawText("DRAW BALL", 985, 468, 22, BLACK);
+        } else if (gameOver) {
+            DrawRectangleRec(btnDeal, GOLD); 
+            DrawText("PLAY AGAIN", btnDeal.x + 35, btnDeal.y + 18, 25, BLACK);
         }
-        if(*(data+5) && *(data+6) && *(data+7) && *(data+8) && *(data+9)){
-            win = true;
-            wincount++;
-        }
-        if(*(data+10) && *(data+11) && *(data+12) && *(data+13) && *(data+14)){
-            win = true;
-            wincount++;
-        }
-        if(*(data+15) && *(data+16) && *(data+17) && *(data+18) && *(data+19)){
-            win = true;
-            wincount++;
-        }
-        if(*(data+20) && *(data+21) && *(data+22) && *(data+23) && *(data+24)){
-            win = true;
-            wincount++;
-        }
+
+        DrawRectangleRec(btnBack, MAROON); 
+        DrawText("BACK", 50, 40, 20, WHITE);
+        
+        EndDrawing();
     }
-    //cross win
-    if(type_win == 1){
-        if(*(data) && *(data+6) && *(data+12) && *(data+18) && *(data+24)){
-            win = true;
-            wincount++;
-        }
-        if(*(data+4) && *(data+8) && *(data+12) && *(data+16) && *(data+20)){
-            win = true;
-            wincount++;
-        }
-    }
-    //colum win
-    if(type_win == 2){
-        if(*(data) && *(data+5) && *(data+10) && *(data+15) && *(data+20)){
-            win = true;
-            wincount++;
-        }
-        if(*(data+1) && *(data+6) && *(data+11) && *(data+16) && *(data+21)){
-            win = true;
-            wincount++;
-        }
-        if(*(data+2) && *(data+7) && *(data+12) && *(data+17) && *(data+22)){
-            win = true;
-            wincount++;
-        }
-        if(*(data+3) && *(data+8) && *(data+13) && *(data+18) && *(data+23)){
-            win = true;
-            wincount++;
-        }
-        if(*(data+4) && *(data+9) && *(data+14) && *(data+19) && *(data+24)){
-            win = true;
-            wincount++;
-        }
-    }
-    return win;
 }
 
 #endif

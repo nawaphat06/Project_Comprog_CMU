@@ -1,179 +1,164 @@
-#ifndef BLACKJACK_H
-#define BLACKJACK_H
+#ifndef BLACKJACK_UI_H
+#define BLACKJACK_UI_H
 
-#include <iostream>
+#include "raylib.h"
+#include "Player.h"
 #include <vector>
 #include <string>
 #include <ctime>
-#include <cstdlib>
-#include "Player.h"
+#include <algorithm>
 
 using namespace std;
 
-struct deck_name_value {
-    string name;
+// โครงสร้างไพ่
+struct Card {
+    string rank;
+    string suit;
     int value;
 };
 
-void drawdeck_bj(string which_type, int &p_total, int &b_total, int &p_val, int &b_val, 
-                 vector<deck_name_value> &P_Deck, vector<deck_name_value> &P_Hand, 
-                 vector<deck_name_value> &B_Deck, vector<deck_name_value> &B_Hand) {
-
-    if (which_type == "Player") {
-        if (p_total > 0) {
-            int rng = rand() % p_total;
-            cout << "You drew " << P_Deck[rng].name << "!\n";
-            p_val += P_Deck[rng].value;
-            P_Hand.push_back(P_Deck[rng]);
-            P_Deck.erase(P_Deck.begin() + rng);
-            p_total--;
-        }
+// ฟังก์ชันสร้างและสับไพ่
+static vector<Card> CreateDeck() {
+    vector<Card> deck;
+    string ranks[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"};
+    int values[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11};
+    string suits[] = {"Hearts", "Diamonds", "Clubs", "Spades"};
+    for (string s : suits) {
+        for (int i = 0; i < 13; i++) deck.push_back({ranks[i], s, values[i]});
     }
-    else if (which_type == "Bot") {
-        if (b_total > 0) {
-            int rng = rand() % b_total;
-            b_val += B_Deck[rng].value;
-            B_Hand.push_back(B_Deck[rng]);
-            B_Deck.erase(B_Deck.begin() + rng);
-            b_total--;
-        }
+    int n = deck.size();
+    for (int i = n - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        // สลับตำแหน่งไพ่
+        Card temp = deck[i];
+        deck[i] = deck[j];
+        deck[j] = temp;
     }
+    return deck;
 }
 
-void playBlackjack(Player &p) {
-    double bet;
-    cout << "\n--- Welcome to BLACKJACK ---" << endl;
-    cout << "Your Credits: " << p.credit << endl;
-    cout << "Enter your bet (0 to exit): ";
-    cin >> bet;
-    if (bet <= 0 || p.credit < bet) return;
-    cin.ignore(1000, '\n');
+// ฟังก์ชันคำนวณแต้ม
+static int CalculateScore(vector<Card> hand) {
+    int score = 0, aces = 0;
+    for (auto c : hand) {
+        score += c.value;
+        if (c.rank == "A") aces++;
+    }
+    while (score > 21 && aces > 0) { score -= 10; aces--; }
+    return score;
+}
 
-    vector<deck_name_value> blueprint_deck = {
-        {"ace of diamonds", 1}, {"two of diamonds", 2}, {"three of diamonds", 3}, {"four of diamonds", 4},
-        {"five of diamonds", 5}, {"six of diamonds", 6}, {"seven of diamonds", 7}, {"eight of diamonds", 8},
-        {"nine of diamonds", 9}, {"ten of diamonds", 10}, {"jack of diamonds", 10}, {"queen of diamonds", 10}, {"king of diamonds", 10},
-        {"ace of clubs", 1}, {"two of clubs", 2}, {"three of clubs", 3}, {"four of clubs", 4},
-        {"five of clubs", 5}, {"six of clubs", 6}, {"seven of clubs", 7}, {"eight of clubs", 8},
-        {"nine of clubs", 9}, {"ten of clubs", 10}, {"jack of clubs", 10}, {"queen of clubs", 10}, {"king of clubs", 10},
-        {"ace of hearts", 1}, {"two of hearts", 2}, {"three of hearts", 3}, {"four of hearts", 4},
-        {"five of hearts", 5}, {"six of hearts", 6}, {"seven of hearts", 7}, {"eight of hearts", 8},
-        {"nine of hearts", 9}, {"ten of hearts", 10}, {"jack of hearts", 10}, {"queen of hearts", 10}, {"king of hearts", 10},
-        {"ace of spades", 1}, {"two of spades", 2}, {"three of spades", 3}, {"four of spades", 4},
-        {"five of spades", 5}, {"six of spades", 6}, {"seven of spades", 7}, {"eight of spades", 8},
-        {"nine of spades", 9}, {"ten of spades", 10}, {"jack of spades", 10}, {"queen of spades", 10}, {"king of spades", 10}
-    };
+void playBlackjackUI(Player &p) {
+    const int screenWidth = 1280;
+    const int screenHeight = 720;
 
-    while (true) {
-        if (p.credit < bet) {
-            cout << "Out of credits!" << endl;
-            break;
-        }
-        
-        p.credit -= bet; // หักเงินจริงตั้งแต่จังหวะนี้เลย (No Refund)
+    vector<Card> deck = CreateDeck();
+    vector<Card> playerHand, dealerHand;
+    int bet = 50;
+    bool playing = false; // สถานะขณะกำลังจั่วไพ่
+    bool gameOver = false;
+    string statusMsg = "Adjust Bet and Deal!";
+    Color msgColor = RAYWHITE;
 
-        vector<deck_name_value> PlayerDeck = blueprint_deck;
-        vector<deck_name_value> PlayerHand;
-        vector<deck_name_value> BotDeck = blueprint_deck;
-        vector<deck_name_value> BotHand;
-        int bot_total_card = 51, player_total_card = 51, player_card_total_value = 0, bot_card_total_value = 0;
+    Rectangle btnDeal  = { 540, 620, 200, 60 };
+    Rectangle btnHit   = { 430, 620, 200, 60 };
+    Rectangle btnStand = { 650, 620, 200, 60 };
+    Rectangle btnMinus = { 460, 550, 50, 40 };
+    Rectangle btnPlus  = { 770, 550, 50, 40 };
+    Rectangle btnBack  = { 30, 30, 100, 40 };
 
-        string status, dummy;
-        bool player_can_draw = true;
-        bool exit_mid_game = false;
+    while (!WindowShouldClose()) {
+        Vector2 mousePos = GetMousePosition();
+        bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 
-        cout << "\nPress enter to draw the first two cards!";
-        getline(cin, dummy);
-        
-        drawdeck_bj("Player", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
-        drawdeck_bj("Player", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
-
-        while (player_can_draw) {
-            cout << "\nNow you have: | ";
-            for (int i = 0; i < PlayerHand.size(); i++) cout << PlayerHand[i].name << " | ";
-            cout << "\nTotal value: " << player_card_total_value << "\n";
-
-            if (player_card_total_value >= 21) {
-                if(player_card_total_value == 21) cout << "Blackjack!\n";
-                else cout << "Exceeded 21!\n";
-                player_can_draw = false;
-                break;
-            }
-
-            // เตือนให้ชัดเจนว่าถ้าออกตอนนี้จะเสียเงิน
-            cout << "Hit(a), Stand(b) or Exit(0) >> "; 
-            getline(cin, status);
-
-            if (status == "0") { // ถ้ากด 0 ชิ่งหนีตอนเห็นไพ่แล้ว
-                cout << "\n[System] You Exit the game! Bet is lost." << endl;
-                p.loss_count++; // บันทึกสถิติแพ้ (เงินไม่ได้คืนเพราะโดนหักไปแล้วตอนต้นลูป)
-                exit_mid_game = true;
-                break; 
-            }
-            else if (status == "a" || status == "A") {
-                drawdeck_bj("Player", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
-            } else {
-                player_can_draw = false;
-            }
-        }
-
-        if (exit_mid_game) break;
-
-        // Bot Turn
-        drawdeck_bj("Bot", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
-        drawdeck_bj("Bot", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
-
-        vector<bool> true_or_false_spinwheel;
-        int bot_want_to_draw = 1;
-        int bot_times_drawn = 0; 
-
-        while (bot_want_to_draw == 1) {
-            if (bot_card_total_value < 20) {
-                for (int i = 0; i < 21 - bot_card_total_value; i++) true_or_false_spinwheel.push_back(1);
-                for (int i = 0; i < bot_card_total_value; i++) true_or_false_spinwheel.push_back(0);
-                int rng = rand() % true_or_false_spinwheel.size();
-                bot_want_to_draw = true_or_false_spinwheel[rng];
-                
-                if (bot_want_to_draw == 1 || bot_card_total_value <= 11) {
-                    drawdeck_bj("Bot", player_total_card, bot_total_card, player_card_total_value, bot_card_total_value, PlayerDeck, PlayerHand, BotDeck, BotHand);
-                    bot_times_drawn++; 
+        if (!playing && !gameOver) {
+            if (isClick) {
+                if (CheckCollisionPointRec(mousePos, btnMinus) && bet > 10) bet -= 10;
+                if (CheckCollisionPointRec(mousePos, btnPlus) && bet + 10 <= p.credit) bet += 10;
+                if (CheckCollisionPointRec(mousePos, btnBack)) return;
+                if (CheckCollisionPointRec(mousePos, btnDeal) && p.credit >= bet) {
+                    p.credit -= bet;
+                    deck = CreateDeck();
+                    playerHand.clear(); dealerHand.clear();
+                    playerHand.push_back(deck.back()); deck.pop_back();
+                    dealerHand.push_back(deck.back()); deck.pop_back();
+                    playerHand.push_back(deck.back()); deck.pop_back();
+                    dealerHand.push_back(deck.back()); deck.pop_back();
+                    playing = true;
+                    statusMsg = "HIT or STAND?";
                 }
-                true_or_false_spinwheel.clear();
-            } else break;
+            }
+        } else if (playing) {
+            if (isClick) {
+                if (CheckCollisionPointRec(mousePos, btnHit)) {
+                    playerHand.push_back(deck.back()); deck.pop_back();
+                    if (CalculateScore(playerHand) > 21) {
+                        playing = false; gameOver = true; p.loss_count++;
+                        statusMsg = "BUST! YOU LOSE."; msgColor = RED;
+                    }
+                }
+                if (CheckCollisionPointRec(mousePos, btnStand)) {
+                    playing = false; gameOver = true;
+                    while (CalculateScore(dealerHand) < 17) {
+                        dealerHand.push_back(deck.back()); deck.pop_back();
+                    }
+                    int pS = CalculateScore(playerHand), dS = CalculateScore(dealerHand);
+                    if (dS > 21 || pS > dS) { p.credit += bet * 2; p.win_count++; statusMsg = "YOU WIN!"; msgColor = GREEN; }
+                    else if (pS < dS) { p.loss_count++; statusMsg = "DEALER WINS!"; msgColor = RED; }
+                    else { p.credit += bet; statusMsg = "PUSH (DRAW)"; msgColor = YELLOW; }
+                }
+            }
+        } else if (gameOver) {
+            if (isClick && (CheckCollisionPointRec(mousePos, btnDeal) || CheckCollisionPointRec(mousePos, btnBack))) {
+                if (CheckCollisionPointRec(mousePos, btnBack)) return;
+                gameOver = false; msgColor = RAYWHITE; statusMsg = "Adjust Bet and Deal!";
+            }
         }
 
-        cout << "\nDealer has drawn: | ";
-        for (int i = 0; i < BotHand.size(); i++){
-            cout << BotHand[i].name << " | ";
+        BeginDrawing();
+        ClearBackground(Color{ 0, 80, 0, 255 });
+        DrawText("BLACKJACK 21", (screenWidth - MeasureText("BLACKJACK 21", 40)) / 2, 30, 40, GOLD);
+        DrawText(TextFormat("Credits: $%.2f", p.credit), (screenWidth - MeasureText(TextFormat("Credits: $%.2f", p.credit), 25)) / 2, 80, 25, WHITE);
+
+        // วาดไพ่เจ้ามือ
+        DrawText("DEALER'S HAND", 100, 130, 20, LIGHTGRAY);
+        for (int i = 0; i < dealerHand.size(); i++) {
+            DrawRectangle(100 + (i * 110), 160, 100, 140, WHITE);
+            if (!gameOver && playing && i == 1) {
+                DrawRectangle(100 + (i * 110), 160, 100, 140, DARKGRAY);
+                DrawText("?", 140 + (i * 110), 210, 40, BLACK);
+            } else {
+                Color c = (dealerHand[i].suit == "Hearts" || dealerHand[i].suit == "Diamonds") ? RED : BLACK;
+                DrawText(dealerHand[i].rank.c_str(), 110 + (i * 110), 170, 30, c);
+                DrawText(dealerHand[i].suit.c_str(), 110 + (i * 110), 205, 15, c);
+            }
         }
-        cout << "\n\nDealer has total value of cards in your hand of " << bot_card_total_value <<"\n";
-        cout << "You have total value of cards in your hand of " << player_card_total_value <<"\n";
-        cout << "\nDealer has additional drawn: " << bot_times_drawn << " Time(s).\n\n";
+
+        // วาดไพ่ผู้เล่น
+        DrawText(TextFormat("YOUR HAND (%d)", CalculateScore(playerHand)), 100, 350, 20, LIGHTGRAY);
+        for (int i = 0; i < playerHand.size(); i++) {
+            DrawRectangle(100 + (i * 110), 380, 100, 140, WHITE);
+            Color c = (playerHand[i].suit == "Hearts" || playerHand[i].suit == "Diamonds") ? RED : BLACK;
+            DrawText(playerHand[i].rank.c_str(), 110 + (i * 110), 390, 30, c);
+            DrawText(playerHand[i].suit.c_str(), 110 + (i * 110), 425, 15, c);
+        }
+
+        DrawText(statusMsg.c_str(), (screenWidth - MeasureText(statusMsg.c_str(), 30)) / 2, 300, 30, msgColor);
+
+        if (!playing && !gameOver) {
+            DrawRectangleRec(btnMinus, GRAY); DrawText("-", 478, 555, 30, BLACK);
+            DrawText(TextFormat("BET: %d", bet), 580, 560, 25, WHITE);
+            DrawRectangleRec(btnPlus, GRAY); DrawText("+", 785, 555, 30, BLACK);
+            DrawRectangleRec(btnDeal, GOLD); DrawText("DEAL", 605, 635, 25, BLACK);
+        } else if (playing) {
+            DrawRectangleRec(btnHit, SKYBLUE); DrawText("HIT", 505, 635, 25, BLACK);
+            DrawRectangleRec(btnStand, ORANGE); DrawText("STAND", 710, 635, 25, BLACK);
+        } else if (gameOver) {
+            DrawRectangleRec(btnDeal, GOLD); DrawText("PLAY AGAIN", 565, 635, 25, BLACK);
+        }
         
-        // Judgement
-        int final_bot_val = (bot_card_total_value > 21) ? 0 : bot_card_total_value;
-
-        if (player_card_total_value <= 21 && player_card_total_value > final_bot_val) {
-            cout << "You win!" << endl;
-            p.credit += (bet * 2);
-            p.win_count++;
-        } else if (player_card_total_value <= 21 && player_card_total_value == final_bot_val) {
-            cout << "Tie!" << endl;
-            p.credit += bet;
-        } else {
-            cout << "You lose!" << endl;
-            p.loss_count++;
-        }
-
-        cout << "\n\n--- CURRENT STATS ---" << endl;
-        p.showProfile(); 
-        cout << "----------------------" << endl;
-
-        cout << "\nPlay again? (1: Yes, 0: No): ";
-        string again;
-        getline(cin, again);
-        if (again == "0") break;
+        DrawRectangleRec(btnBack, MAROON); DrawText("BACK", 50, 40, 20, WHITE);
+        EndDrawing();
     }
 }
-
 #endif

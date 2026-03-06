@@ -1,6 +1,6 @@
 #ifndef PLAYER_H //เช็กว่าเคยอ่านหรือยัง
 #define PLAYER_H //ถ้ายัง ให้จดไว้ว่าอ่านแล้ว
-#include<iostream>
+
 #include<string>
 
 
@@ -23,14 +23,6 @@ Player::Player(string input_name, double c = 1000.0, int win = 0, int loss = 0){
     credit = c;
     win_count = win;
     loss_count = loss;
-}
-
-void Player::showProfile(){
-    cout << "\n--- Player Profile ---" << endl;
-    cout << "Name: " << name << endl;
-    cout << "Credits: " << credit << " pts" << endl;
-    cout << "Stats: Win " << win_count << " | Loss " << loss_count << endl;
-    cout << "----------------------\n" << endl;
 }
 
 #endif //จบขอบเขต
