@@ -1,28 +1,29 @@
-#ifndef PLAYER_H //เช็กว่าเคยอ่านหรือยัง
-#define PLAYER_H //ถ้ายัง ให้จดไว้ว่าอ่านแล้ว
+#ifndef PLAYER_H
+#define PLAYER_H
 
 #include<string>
 
-
 using namespace std;
+
 
 class Player{
     public:
         string name;
-        double credit;
+        float credit;
         int win_count;
-        int loss_count;
+        int loss_count; 
 
-        Player(string input_name, double c, int win, int loss);
-        void showProfile();
+        //Constructor 
+        Player(string input_name, float c, int win, int loss);
+        
 };
 
 
-Player::Player(string input_name, double c = 1000.0, int win = 0, int loss = 0){
+Player::Player(string input_name, float c = 1000.0, int win = 0, int loss = 0){
     name = input_name;
     credit = c;
     win_count = win;
     loss_count = loss;
 }
 
-#endif //จบขอบเขต
+#endif

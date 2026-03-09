@@ -1,376 +1,297 @@
 #include <iostream>
 #include <string>
 
-// นำเข้าข้อมูลผู้เล่นและระบบจัดการไฟล์
+// นำเข้าข้อมูลระบบหลังบ้าน
 #include "Player.h"
 #include "Auth.h" 
 
-// ป้องกันปัญหาขัดแย้งกับ Windows
-#if defined(_WIN32)
-    #define NOGDI             
-    #define NOUSER            
-#endif
 
+// นำเข้าไลบรารีกราฟิกและไฟล์มินิเกมทั้งหมด
 #include "raylib.h"
-
-// นำเข้าไฟล์ UI มินิเกม
 #include "slot.h" 
 #include "hilo.h" 
 #include "blackjack.h" 
 #include "bingo.h" 
 
-#if defined(_WIN32)
-    #undef Rectangle
-    #undef CloseWindow
-    #undef DrawText
-    #undef ShowCursor
-#endif
 
 using namespace std;
 
-// ฟังก์ชันสร้างสตริงรหัสผ่านที่ซ่อนเป็นเครื่องหมายดอกจัน
+// ซ่อนรหัสผ่านเป็น *
 string getMaskedPassword(string pass) {
     return string(pass.length(), '*');
 }
 
 int main() {
+    // ตั้งค่าพื้นฐานของหน้าต่างเกม
     const int screenWidth = 1280;
     const int screenHeight = 720;
-    float centerX = screenWidth / 2.0f;
-    float centerY = screenHeight / 2.0f;
+    float centerX = screenWidth / float(2.0);
+    float centerY = screenHeight / float(2.0);
     
-    InitWindow(screenWidth, screenHeight, "SCAMMER CASINO CLUB - Ultimate Edition");
-    SetTargetFPS(60);
 
-    // --- โหลดรูปภาพ How To Play ---
-    // เตรียมไฟล์รูปชื่อ howtoplay.png ไว้ในโฟลเดอร์เดียวกับโค้ดด้วยนะครับ!
-    Texture2D htpImage = LoadTexture("howtoplay.png"); 
+    InitWindow(screenWidth, screenHeight, "SCAMMER CASINO CLUB - Handsome Edition");//ค.กว้าง,ค.สูง,ชื่อหน้าต่าง
+    SetTargetFPS(60); // ล็อคค.เร็ว 60 fps ให้ไม่กินเครื่องเกินไป
 
-    // ตัวแปรระบบเกม
-    Player p1("Guest Player", 1000.0, 0, 0);
-    string currentPassword = "";
+    Player p1("Guest Player", 1000.0, 0, 0); //setค่าเริ่มต้น ชื่อ, เงิน, win, loss ชั่วคราว
+    string currentPassword = ""; //เก็บรหัสผ่านชั่วคราวเอาไว้เซฟข้อมูลตอนปิดเกม
     
-    // ตัวแปรจัดการหน้าจอ (0 = เมนูเลือก, 1 = ฟอร์มกรอกข้อมูล, 2 = คาสิโน Hub, 3 = หน้า How To Play)
+    //screenState 0 = หน้าแรกสุด, 1 = ฟอร์มกรอกชื่อและรหัส, 2 = คาสิโน Hub
     int screenState = 0; 
-    bool isLoginMode = true; 
+    bool isLoginMode = true; // แยกโหมดระหว่าง Login หรือ Register
 
-    // ตัวแปรฟอร์มกรอกข้อมูล
+    //ตัวแปรสำหรับการพิมพ์ข้อความด้วยคีย์บอร์ด
     string inputUser = "";
     string inputPass = "";
-    int activeBox = 0; 
-    string sysMsg = "";
-    Color msgColor = RAYWHITE;
+    int activeBox = 0; // 0 = ไม่เลือก, 1 = กำลังพิมพ์ Username, 2 = กำลังพิมพ์ Password
+    string sysMsg = ""; // ข้อความแจ้งเตือน
+    Color msgColor = RAYWHITE; //สีข้อความ
 
-    while (!WindowShouldClose()) {
-        Vector2 mousePos = GetMousePosition();
+    // ===========
+    //  GAME LOOP
+    // ===========
+    while (!WindowShouldClose()) { //ทำงานวนไปเรื่อยๆ จนกว่าผู้เล่นจะกดปิดหน้าต่างๆ
+        
+        //รับค่าตำแหน่งเมาส์และคลิกซ้าย
+        Vector2 mousePos = GetMousePosition(); //ตน.mouse(X,Y)
         bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 
-        // ==========================================
-        // STATE 0: หน้าต่างเลือกระบบ (Login / Register / Guest)
-        // ==========================================
+        // ---------------------
+        // screenState 0 หน้าแรก
+        // ---------------------
         if (screenState == 0) {
-            Rectangle btnGoLogin  = { centerX - 150, 300, 300, 60 };
-            Rectangle btnGoReg    = { centerX - 150, 380, 300, 60 };
-            Rectangle btnGoGuest  = { centerX - 150, 460, 300, 60 };
-            Rectangle btnExitGame = { centerX - 150, 540, 300, 60 }; 
+            // ประกาศ Hitbox ของปุ่มทั้ง 4 ปุ่ม 
+            //{ พิกัด X, พิกัด Y, ความกว้าง, ความสูง }
+            Rectangle btnGoLogin  = { centerX - 150, 320, 300, 60 }; 
+            Rectangle btnGoReg    = { centerX - 150, 400, 300, 60 };
+            Rectangle btnGoGuest  = { centerX - 150, 480, 300, 60 };
+            Rectangle btnExitGame = { centerX - 150, 560, 300, 60 }; 
 
+            //Update: เช็คว่าเมาส์คลิกโดนปุ่มไหน
             if (isClick) {
                 if (CheckCollisionPointRec(mousePos, btnGoLogin)) { screenState = 1; isLoginMode = true; sysMsg = "Enter Credentials to Login"; msgColor = RAYWHITE; activeBox = 1; }
                 if (CheckCollisionPointRec(mousePos, btnGoReg))   { screenState = 1; isLoginMode = false; sysMsg = "Create a New Account"; msgColor = SKYBLUE; activeBox = 1; }
                 if (CheckCollisionPointRec(mousePos, btnGoGuest)) { screenState = 2; p1.name = "Guest Player"; p1.credit = 1000.0; p1.win_count = 0; p1.loss_count = 0; }
-                if (CheckCollisionPointRec(mousePos, btnExitGame)) break; // ปิดเกม
+                if (CheckCollisionPointRec(mousePos, btnExitGame)) break; //ออกจาก Game Loop เพื่อปิดเกม
             }
 
+            // ขั้นตอน Draw: เริ่มวาดกราฟิกบนหน้าจอ
             BeginDrawing();
-            ClearBackground(Color{ 15, 25, 50, 255 }); // สีน้ำเงินเข้ม VIP
+            ClearBackground(Color{ 15, 25, 50, 255 }); //เทสีพื้นหลัง = Midnight Blue
             
-            DrawText("SCAMMER CASINO CLUB", (screenWidth - MeasureText("SCAMMER CASINO CLUB", 55)) / 2, 100, 55, GOLD);
-            DrawText("Welcome! Please identify yourself.", (screenWidth - MeasureText("Welcome! Please identify yourself.", 25)) / 2, 180, 25, RAYWHITE);
+            // วาดแสงสะท้อนพื้นหลังแบบไล่ระดับ
+            DrawCircleGradient(centerX, centerY, 600, Color{ 30, 50, 100, 255 }, Color{ 15, 25, 50, 255 });
 
-            // วาดกรอบพื้นหลังดำโปร่งแสง
-            DrawRectangle(centerX - 190, 270, 380, 360, Color{0, 0, 0, 150});
+            // วาดชื่อเกม (วาดสีดำก่อนเพื่อทำเป็นเงาตกกระทบ)
+            DrawText("SCAMMER CASINO CLUB", centerX - MeasureText("SCAMMER CASINO CLUB", 60)/2 + 4, 104, 60, BLACK); //เงา
+            DrawText("SCAMMER CASINO CLUB", centerX - MeasureText("SCAMMER CASINO CLUB", 60)/2, 100, 60, GOLD); //ตัวอักษร
 
-            // ปุ่ม LOGIN
-            Color cLogin = CheckCollisionPointRec(mousePos, btnGoLogin) ? LIGHTGRAY : RAYWHITE;
-            DrawRectangleRec(btnGoLogin, cLogin);
-            if (!CheckCollisionPointRec(mousePos, btnGoLogin)) DrawRectangle(btnGoLogin.x, btnGoLogin.y + btnGoLogin.height - 5, btnGoLogin.width, 5, Color{0,0,0,100});
-            DrawRectangleLinesEx(btnGoLogin, 3, BLACK);
-            DrawText("LOGIN", btnGoLogin.x + (btnGoLogin.width - MeasureText("LOGIN", 25))/2, btnGoLogin.y + 18, 25, BLACK);
+            // วาดกรอบสี่เหลี่ยมพื้นหลังของเมนู
+            DrawRectangleRounded({ centerX - 190, 290, 380, 360 }, 0.1f, 10, Color{ 0, 0, 0, 180 });
+            DrawRectangleRoundedLines({ centerX - 190, 290, 380, 360 }, 0.1f, 10, GOLD); //กรอบทอง
 
-            // ปุ่ม REGISTER
-            Color cReg = CheckCollisionPointRec(mousePos, btnGoReg) ? LIGHTGRAY : RAYWHITE;
-            DrawRectangleRec(btnGoReg, cReg);
-            if (!CheckCollisionPointRec(mousePos, btnGoReg)) DrawRectangle(btnGoReg.x, btnGoReg.y + btnGoReg.height - 5, btnGoReg.width, 5, Color{0,0,0,100});
-            DrawRectangleLinesEx(btnGoReg, 3, BLACK);
-            DrawText("REGISTER", btnGoReg.x + (btnGoReg.width - MeasureText("REGISTER", 25))/2, btnGoReg.y + 18, 25, BLACK);
+            // ใช้ Loop วาดปุ่มทั้ง 4 ปุ่ม
+            Rectangle btns[] = { btnGoLogin, btnGoReg, btnGoGuest, btnExitGame };
+            const char* lbls[] = { "LOGIN", "REGISTER", "PLAY AS GUEST", "EXIT GAME" };
+            Color baseColors[] = { RAYWHITE, RAYWHITE, RAYWHITE, Color{ 180, 40, 40, 255 } }; //Color{ 180, 40, 40, 255 } = แดง
 
-            // ปุ่ม GUEST
-            Color cGuest = CheckCollisionPointRec(mousePos, btnGoGuest) ? LIGHTGRAY : RAYWHITE;
-            DrawRectangleRec(btnGoGuest, cGuest);
-            if (!CheckCollisionPointRec(mousePos, btnGoGuest)) DrawRectangle(btnGoGuest.x, btnGoGuest.y + btnGoGuest.height - 5, btnGoGuest.width, 5, Color{0,0,0,100});
-            DrawRectangleLinesEx(btnGoGuest, 3, BLACK);
-            DrawText("PLAY AS GUEST", btnGoGuest.x + (btnGoGuest.width - MeasureText("PLAY AS GUEST", 25))/2, btnGoGuest.y + 18, 25, BLACK);
-
-            // ปุ่ม EXIT
-            Color cExit = CheckCollisionPointRec(mousePos, btnExitGame) ? MAROON : RED;
-            DrawRectangleRec(btnExitGame, cExit);
-            if (!CheckCollisionPointRec(mousePos, btnExitGame)) DrawRectangle(btnExitGame.x, btnExitGame.y + btnExitGame.height - 5, btnExitGame.width, 5, Color{0,0,0,100});
-            DrawRectangleLinesEx(btnExitGame, 3, GOLD);
-            DrawText("EXIT GAME", btnExitGame.x + (btnExitGame.width - MeasureText("EXIT GAME", 25))/2, btnExitGame.y + 18, 25, WHITE);
+            for(int i=0; i<4; i++) {
+                bool hover = CheckCollisionPointRec(mousePos, btns[i]);
+                //ถ้านำเมาส์ไปชี้ ให้เปลี่ยนเป็นสีทอง ถ้าไม่ชี้ให้ใช้สีปกติ
+                DrawRectangleRounded(btns[i], 0.2f, 10, hover ? GOLD : baseColors[i]);
+                DrawText(lbls[i], btns[i].x + (btns[i].width - MeasureText(lbls[i], 25))/2, btns[i].y + 18, 25, (i == 3) ? WHITE : BLACK);
+                //(ข้อความ, แกน x (แบบกึ่งกลาง) , แกน y + พิกเซล, ขนาด front , เปลี่ยนสีถ้าสัมผัส )
+            }
 
             EndDrawing();
         }
-        // ==========================================
-        // STATE 1: ฟอร์มกรอกข้อมูล (Username / Password)
-        // ==========================================
+        
+        // ---------------------------
+        // screenState 1 ฟอร์มกรอกข้อมูล 
+        // ---------------------------
         else if (screenState == 1) {
-            Rectangle boxUser   = { centerX - 150, 250, 300, 50 };
-            Rectangle boxPass   = { centerX - 150, 350, 300, 50 };
-            Rectangle btnSubmit = { centerX - 150, 450, 300, 60 };
+            Rectangle boxUser   = { centerX - 150, 260, 300, 50 };
+            Rectangle boxPass   = { centerX - 150, 360, 300, 50 };
+            Rectangle btnSubmit = { centerX - 150, 470, 300, 60 };
             Rectangle btnBack   = { 30, 30, 100, 40 };
 
+            // Update: การคลิก
             if (isClick) {
+                // เช็คว่าผู้เล่นกดกล่องข้อความอันไหน เพื่อเปิดการพิมพ์
                 if (CheckCollisionPointRec(mousePos, boxUser)) activeBox = 1;
                 else if (CheckCollisionPointRec(mousePos, boxPass)) activeBox = 2;
                 else activeBox = 0;
-
+                
                 if (CheckCollisionPointRec(mousePos, btnBack)) { screenState = 0; inputUser = ""; inputPass = ""; }
-
+                
+                //กดปุ่มยืนยัน(Submit) ที่เชื่อมกับฐานข้อมูล Auth
                 if (CheckCollisionPointRec(mousePos, btnSubmit)) {
-                    if (inputUser.empty() || inputPass.empty()) {
-                        sysMsg = "Fields cannot be empty!"; msgColor = RED;
-                    } else {
+                    if (inputUser.empty() || inputPass.empty()) { sysMsg = "Fields cannot be empty!"; msgColor = RED; }
+                    else {
                         if (isLoginMode) {
-                            if (Auth::LoginUser(inputUser, inputPass, p1)) {
-                                currentPassword = inputPass;
-                                screenState = 2; // เข้าเกม
-                            } else {
-                                sysMsg = "Invalid Username or Password!"; msgColor = RED;
-                            }
+                            // ใช้การส่งตัวแปร p1 แบบ Reference เข้าไปให้ฟังก์ชัน LoginUser จัดการยัดข้อมูลทับ
+                            if (Auth::LoginUser(inputUser, inputPass, p1)) { 
+                                currentPassword = inputPass; 
+                                screenState = 2; }
+                            else { 
+                                sysMsg = "Invalid Username or Password!"; 
+                                msgColor = RED; }
                         } else {
-                            if (Auth::RegisterUser(inputUser, inputPass)) {
-                                sysMsg = "Success! You can now Login."; msgColor = GREEN;
-                                isLoginMode = true; 
-                                inputPass = ""; 
-                                activeBox = 2;
-                            } else {
-                                sysMsg = "Username already exists!"; msgColor = RED;
+                            // ถ้าเป็นโหมด Register จะบันทึกข้อมูลต่อท้ายไฟล์ .txt
+                            if (Auth::RegisterUser(inputUser, inputPass)) { 
+                                sysMsg = "Success! Login now."; 
+                                msgColor = GREEN; isLoginMode = true; 
+                                inputPass = ""; activeBox = 2; 
                             }
+                            else { 
+                                sysMsg = "Username already exists!"; 
+                                msgColor = RED; }
                         }
                     }
                 }
             }
 
+            // ระบบรับค่าจากคีย์บอร์ด
             if (activeBox > 0) {
-                int key = GetCharPressed();
+                int key = GetCharPressed(); // อ่านค่าปุ่มที่ถูกกด
                 while (key > 0) {
+                    // อนุญาตเฉพาะตัวอักษรภาษาอังกฤษ ตัวเลข และสัญลักษณ์พื้นฐาน
                     if ((key >= 32) && (key <= 125)) {
+                        //ตัวอักษรต่อท้ายตัวเก่า เกิน 15 ตัวห้ามพิมพ์ต่อ
                         if (activeBox == 1 && inputUser.length() < 15) inputUser += (char)key;
                         if (activeBox == 2 && inputPass.length() < 15) inputPass += (char)key;
                     }
                     key = GetCharPressed(); 
                 }
-
+                // ถ้ากด Backspace ให้ลบตัวอักษรล่าสุดออก 1 ตัว
                 if (IsKeyPressed(KEY_BACKSPACE)) {
                     if (activeBox == 1 && inputUser.length() > 0) inputUser.pop_back();
                     if (activeBox == 2 && inputPass.length() > 0) inputPass.pop_back();
                 }
-                if (IsKeyPressed(KEY_TAB)) activeBox = (activeBox == 1) ? 2 : 1;
             }
 
+            // ขั้นตอน Draw: วาดหน้าฟอร์ม
             BeginDrawing();
             ClearBackground(Color{ 15, 25, 50, 255 });
-
-            DrawText(isLoginMode ? "ACCOUNT LOGIN" : "ACCOUNT REGISTER", (screenWidth - MeasureText(isLoginMode ? "ACCOUNT LOGIN" : "ACCOUNT REGISTER", 40)) / 2, 80, 40, GOLD);
-            DrawText(sysMsg.c_str(), (screenWidth - MeasureText(sysMsg.c_str(), 20)) / 2, 150, 20, msgColor);
-
+            //(ข้อความ, แกน x (แบบกึ่งกลาง) , แกน y + พิกเซล, ขนาด front , สี )
+            DrawText(isLoginMode ? "ACCOUNT LOGIN" : "ACCOUNT REGISTER", centerX - MeasureText(isLoginMode ? "ACCOUNT LOGIN" : "ACCOUNT REGISTER", 40)/2, 80, 40, GOLD);
+            //ข้อความแจ้งเตือน
+            DrawText(sysMsg.c_str(), centerX - MeasureText(sysMsg.c_str(), 20)/2, 150, 20, msgColor);
+            // x y กว้าง สูง สี
             DrawRectangle(centerX - 190, 210, 380, 340, Color{0, 0, 0, 150});
 
+            // วาดกล่อง Username และข้อความด้านใน
             DrawText("Username:", centerX - 150, 225, 20, RAYWHITE);
-            DrawRectangleRec(boxUser, (activeBox == 1) ? RAYWHITE : LIGHTGRAY);
-            DrawRectangleLinesEx(boxUser, 3, (activeBox == 1) ? GOLD : BLACK);
-            string dUser = inputUser; if(activeBox == 1 && (int)(GetTime()*2)%2==0) dUser += "_";
-            DrawText(dUser.c_str(), boxUser.x + 10, boxUser.y + 15, 20, BLACK);
+            DrawRectangleRec(boxUser, activeBox == 1 ? RAYWHITE : LIGHTGRAY);
+            DrawRectangleLinesEx(boxUser, 3, activeBox == 1 ? GOLD : BLACK);
+            DrawText(inputUser.c_str(), boxUser.x + 10, boxUser.y + 15, 20, BLACK);
 
+            // วาดกล่อง Password ซ่อนรหัสเป็น ***
             DrawText("Password:", centerX - 150, 325, 20, RAYWHITE);
-            DrawRectangleRec(boxPass, (activeBox == 2) ? RAYWHITE : LIGHTGRAY);
-            DrawRectangleLinesEx(boxPass, 3, (activeBox == 2) ? GOLD : BLACK);
-            string dPass = getMaskedPassword(inputPass); if(activeBox == 2 && (int)(GetTime()*2)%2==0) dPass += "_";
-            DrawText(dPass.c_str(), boxPass.x + 10, boxPass.y + 15, 20, BLACK); 
+            DrawRectangleRec(boxPass, activeBox == 2 ? RAYWHITE : LIGHTGRAY);
+            DrawRectangleLinesEx(boxPass, 3, activeBox == 2 ? GOLD : BLACK);
+            DrawText(getMaskedPassword(inputPass).c_str(), boxPass.x + 10, boxPass.y + 15, 20, BLACK); 
 
-            Color cSub = CheckCollisionPointRec(mousePos, btnSubmit) ? MAROON : RED;
-            DrawRectangleRec(btnSubmit, cSub);
-            if (!CheckCollisionPointRec(mousePos, btnSubmit)) DrawRectangle(btnSubmit.x, btnSubmit.y + btnSubmit.height - 5, btnSubmit.width, 5, Color{0,0,0,100});
-            DrawRectangleLinesEx(btnSubmit, 3, GOLD);
-            const char* subTxt = isLoginMode ? "LOGIN" : "REGISTER";
-            DrawText(subTxt, btnSubmit.x + (btnSubmit.width - MeasureText(subTxt, 25))/2, btnSubmit.y + 18, 25, GOLD);
-
-            DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON);
-            DrawRectangleLinesEx(btnBack, 2, WHITE);
-            DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
-
+            //แตะปุ่ม เปลี่ยนสี
+            bool subHover = CheckCollisionPointRec(mousePos, btnSubmit);
+            DrawRectangleRounded(btnSubmit, 0.2f, 10, subHover ? LIME : GREEN);
+            DrawText(isLoginMode ? "LOGIN" : "REGISTER", btnSubmit.x + (btnSubmit.width - MeasureText(isLoginMode ? "LOGIN" : "REGISTER", 25))/2, btnSubmit.y + 18, 25, BLACK);
+            
+            DrawRectangleRec(btnBack, MAROON);
+            DrawText("BACK", 50, 40, 20, WHITE);
             EndDrawing();
         }
-        // ==========================================
-        // STATE 2: หน้าคาสิโนหลัก (Main Hub)
-        // ==========================================
+        
+        // --------------------
+        // [screenState 2] หน้าคาสิโนหลัก
+        // ----------------------------
         else if (screenState == 2) {
-            // พิกัดปุ่มหน้าคาสิโน Hub
-            Rectangle btnSlot      = { centerX - 170, 240, 340, 50 };
-            Rectangle btnHilo      = { centerX - 170, 300, 340, 50 };
-            Rectangle btnBlackjack = { centerX - 170, 360, 340, 50 };
-            Rectangle btnBingo     = { centerX - 170, 420, 340, 50 };
+            Rectangle btnSlot      = { centerX - 180, 270, 360, 55 };
+            Rectangle btnHilo      = { centerX - 180, 340, 360, 55 };
+            Rectangle btnBlackjack = { centerX - 180, 410, 360, 55 };
+            Rectangle btnBingo     = { centerX - 180, 480, 360, 55 };
+            Rectangle btnLogout    = { centerX - 180, 580, 360, 55 }; 
             
-            // เพิ่มปุ่ม HOW TO PLAY
-            Rectangle btnHTP       = { centerX - 170, 490, 340, 50 }; 
-            Rectangle btnLogout    = { centerX - 170, 560, 340, 50 }; 
-            Rectangle btnBegMoney  = { centerX - 170, 400, 340, 60 }; // ปุ่มขอเงินตอนล้มละลาย
+            Rectangle btnBegMoney  = { centerX - 180, 400, 360, 60 }; 
 
-            // เช็คว่าเงินหมดหรือยัง (น้อยกว่า 1 แปลว่าแทงไม่ได้แล้ว)
+            // ตรวจสอบสถานะการเงิน ถ้าเงินหมด (ต่ำกว่า 1) จะถือว่าล้มละลาย
             bool isBankrupt = (p1.credit < 1.0f);
 
+            // Update: เช็คการคลิกเข้าเกม
             if (isClick) {
                 if (isBankrupt) {
-                    // ถังแตก กดได้แค่ปุ่มขอเงิน, วิธีเล่น หรือ ออกจากระบบ
-                    if (CheckCollisionPointRec(mousePos, btnBegMoney)) {
-                        p1.credit = 1000.0f; // รีเซ็ตเงิน
-                        p1.win_count = 0;    // รีเซ็ตสถิติเพื่อความแฟร์
-                        p1.loss_count = 0;
+                    // ถ้าถังแตก ให้กดได้แค่ปุ่มขอเงิน (รีเซ็ตข้อมูล)
+                    if (CheckCollisionPointRec(mousePos, btnBegMoney)) { 
+                        p1.credit = 1000.0f; 
+                        p1.win_count = 0; 
+                        p1.loss_count = 0; 
                     }
-                    if (CheckCollisionPointRec(mousePos, btnHTP)) screenState = 3;
                 } else {
-                    // เล่นได้ปกติ
+                    // ถ้าเงินยังเหลือ กดเข้าเกมย่อยได้ p1 ข้อมูลผู้เล่ย
                     if (CheckCollisionPointRec(mousePos, btnSlot))      playSlotUI(p1); 
                     if (CheckCollisionPointRec(mousePos, btnHilo))      playHiloUI(p1); 
                     if (CheckCollisionPointRec(mousePos, btnBlackjack)) playBlackjackUI(p1); 
                     if (CheckCollisionPointRec(mousePos, btnBingo))     playBingoUI(p1); 
-                    
-                    // กดปุ่ม HOW TO PLAY
-                    if (CheckCollisionPointRec(mousePos, btnHTP)) screenState = 3; 
                 }
-
-                // ปุ่ม Logout กดได้เสมอ
+                
+                // ออกจากระบบและเซฟข้อมูล
                 if (CheckCollisionPointRec(mousePos, btnLogout)) {
+                    //ทำการบันทึกข้อมูลลงไฟล์ก่อนออกจากระบบ (เว้นแต่เป็น Guest)
                     if (p1.name != "Guest Player") Auth::SaveUser(p1, currentPassword);
-                    inputUser = ""; inputPass = ""; currentPassword = "";
+                    inputUser = ""; 
+                    inputPass = ""; 
+                    currentPassword = ""; 
                     screenState = 0; 
                 }
             }
 
+            // ขั้นตอน Draw: วาดหน้าเมนูหลัก
             BeginDrawing();
-            ClearBackground(Color{ 10, 30, 20, 255 }); // สีเขียวเข้ม VIP ให้ความรู้สึกโต๊ะคาสิโน
-            
-            DrawText("SCAMMER CASINO CLUB", (screenWidth - MeasureText("SCAMMER CASINO CLUB", 50)) / 2, 40, 50, GOLD);
-            
-            // แผงโปรไฟล์ผู้เล่น
-            DrawRectangle(centerX - 300, 110, 600, 100, Color{0, 0, 0, 150});
-            DrawRectangleLines(centerX - 300, 110, 600, 100, GOLD);
-            DrawText(TextFormat("Player: %s", p1.name.c_str()), centerX - 270, 125, 25, RAYWHITE);
-            DrawText(TextFormat("Total Credits: $%.2f", p1.credit), centerX - 270, 160, 35, (isBankrupt ? RED : LIME));
-            
-            DrawText(TextFormat("Wins: %d | Losses: %d", p1.win_count, p1.loss_count), centerX + 70, 125, 20, LIGHTGRAY);
+            ClearBackground(Color{ 10, 40, 20, 255 }); // โทนสีเขียวคาสิโน
+            DrawRectangleGradientV(0, 0, screenWidth, screenHeight, Color{ 20, 60, 30, 255 }, Color{ 10, 30, 15, 255 }); //ไล่สี
 
+            DrawText("SCAMMER CASINO CLUB", centerX - MeasureText("SCAMMER CASINO CLUB", 50)/2 + 3, 43, 50, BLACK);//เงา
+            DrawText("SCAMMER CASINO CLUB", centerX - MeasureText("SCAMMER CASINO CLUB", 50)/2, 40, 50, GOLD);
+            
+            // แผงข้อมูลผู้เล่น (Player Profile)
+            DrawRectangleRounded({ centerX - 320, 110, 640, 110 }, 0.1f, 10, Color{ 0, 0, 0, 160 });
+            DrawRectangleRoundedLines({ centerX - 320, 110, 640, 110 }, 0.1f, 10, GOLD);
+            DrawText(TextFormat("WELCOME, %s", p1.name.c_str()), centerX - 290, 130, 22, RAYWHITE);
+            // แสดงยอดเงิน ถ้าถังแตกเป็นสีแดง ถ้าปกติเป็นสีเขียว
+            DrawText(TextFormat("CREDITS: $%.2f", p1.credit), centerX - 290, 165, 35, isBankrupt ? RED : LIME);
+            DrawText(TextFormat("W: %d  L: %d", p1.win_count, p1.loss_count), centerX +120, 135, 20, LIGHTGRAY);
+
+            // เงื่อนไขการวาดปุ่ม: ถ้าล้มละลายซ่อนปุ่มเกมทั้งหมด
             if (isBankrupt) {
-                // --- หน้าจอตอนถังแตก ---
-                DrawText("BANKRUPT!", (screenWidth - MeasureText("BANKRUPT!", 60)) / 2, 260, 60, RED);
-                DrawText("You are out of money. The house always wins!", (screenWidth - MeasureText("You are out of money. The house always wins!", 25)) / 2, 330, 25, RAYWHITE);
-
-                Color cBeg = CheckCollisionPointRec(mousePos, btnBegMoney) ? ORANGE : GOLD;
-                DrawRectangleRec(btnBegMoney, cBeg);
-                if (!CheckCollisionPointRec(mousePos, btnBegMoney)) DrawRectangle(btnBegMoney.x, btnBegMoney.y + btnBegMoney.height - 5, btnBegMoney.width, 5, Color{0,0,0,100});
-                DrawRectangleLinesEx(btnBegMoney, 3, BLACK);
-                DrawText("BEG FOR BAILOUT ($1000)", btnBegMoney.x + (btnBegMoney.width - MeasureText("BEG FOR BAILOUT ($1000)", 22))/2, btnBegMoney.y + 20, 22, BLACK);
-            
-                // ปุ่ม HOW TO PLAY (ตอนถังแตก)
-                Color cHtp = CheckCollisionPointRec(mousePos, btnHTP) ? DARKGRAY : GRAY;
-                DrawRectangleRec(btnHTP, cHtp);
-                if (!CheckCollisionPointRec(mousePos, btnHTP)) DrawRectangle(btnHTP.x, btnHTP.y + btnHTP.height - 4, btnHTP.width, 4, Color{0,0,0,100});
-                DrawRectangleLinesEx(btnHTP, 2, WHITE);
-                DrawText("HOW TO PLAY", btnHTP.x + (btnHTP.width - MeasureText("HOW TO PLAY", 20))/2, btnHTP.y + 15, 20, WHITE);
-
-            } else {
-                // --- วาดปุ่มเกม (เล่นได้ปกติ) ---
-                Color cSlot = CheckCollisionPointRec(mousePos, btnSlot) ? SKYBLUE : RAYWHITE;
-                DrawRectangleRec(btnSlot, cSlot);
-                if (!CheckCollisionPointRec(mousePos, btnSlot)) DrawRectangle(btnSlot.x, btnSlot.y + btnSlot.height - 5, btnSlot.width, 5, Color{0,0,0,100});
-                DrawRectangleLinesEx(btnSlot, 3, BLACK);
-                DrawText("PLAY SLOT MACHINE", btnSlot.x + (btnSlot.width - MeasureText("PLAY SLOT MACHINE", 22))/2, btnSlot.y + 15, 22, BLACK);
-
-                Color cHilo = CheckCollisionPointRec(mousePos, btnHilo) ? SKYBLUE : RAYWHITE;
-                DrawRectangleRec(btnHilo, cHilo);
-                if (!CheckCollisionPointRec(mousePos, btnHilo)) DrawRectangle(btnHilo.x, btnHilo.y + btnHilo.height - 5, btnHilo.width, 5, Color{0,0,0,100});
-                DrawRectangleLinesEx(btnHilo, 3, BLACK);
-                DrawText("PLAY HI-LO GAME", btnHilo.x + (btnHilo.width - MeasureText("PLAY HI-LO GAME", 22))/2, btnHilo.y + 15, 22, BLACK);
-
-                Color cBj = CheckCollisionPointRec(mousePos, btnBlackjack) ? SKYBLUE : RAYWHITE;
-                DrawRectangleRec(btnBlackjack, cBj);
-                if (!CheckCollisionPointRec(mousePos, btnBlackjack)) DrawRectangle(btnBlackjack.x, btnBlackjack.y + btnBlackjack.height - 5, btnBlackjack.width, 5, Color{0,0,0,100});
-                DrawRectangleLinesEx(btnBlackjack, 3, BLACK);
-                DrawText("PLAY BLACKJACK 21", btnBlackjack.x + (btnBlackjack.width - MeasureText("PLAY BLACKJACK 21", 22))/2, btnBlackjack.y + 15, 22, BLACK);
-
-                Color cBingo = CheckCollisionPointRec(mousePos, btnBingo) ? SKYBLUE : RAYWHITE;
-                DrawRectangleRec(btnBingo, cBingo);
-                if (!CheckCollisionPointRec(mousePos, btnBingo)) DrawRectangle(btnBingo.x, btnBingo.y + btnBingo.height - 5, btnBingo.width, 5, Color{0,0,0,100});
-                DrawRectangleLinesEx(btnBingo, 3, BLACK);
-                DrawText("PLAY BINGO BONANZA", btnBingo.x + (btnBingo.width - MeasureText("PLAY BINGO BONANZA", 22))/2, btnBingo.y + 15, 22, BLACK);
+                DrawText("BANKRUPT!", centerX - MeasureText("BANKRUPT!", 60)/2, 280, 60, RED);
+                DrawText("The house always wins...", centerX - MeasureText("The house always wins...", 20)/2, 350, 20, GRAY);
                 
-                // ปุ่ม HOW TO PLAY
-                Color cHtp = CheckCollisionPointRec(mousePos, btnHTP) ? DARKGRAY : GRAY;
-                DrawRectangleRec(btnHTP, cHtp);
-                if (!CheckCollisionPointRec(mousePos, btnHTP)) DrawRectangle(btnHTP.x, btnHTP.y + btnHTP.height - 4, btnHTP.width, 4, Color{0,0,0,100});
-                DrawRectangleLinesEx(btnHTP, 2, WHITE);
-                DrawText("HOW TO PLAY", btnHTP.x + (btnHTP.width - MeasureText("HOW TO PLAY", 20))/2, btnHTP.y + 15, 20, WHITE);
-            }
-
-            // ปุ่ม Logout (อยู่ล่างสุดเสมอ)
-            Color cLog = CheckCollisionPointRec(mousePos, btnLogout) ? MAROON : RED;
-            DrawRectangleRec(btnLogout, cLog);
-            if (!CheckCollisionPointRec(mousePos, btnLogout)) DrawRectangle(btnLogout.x, btnLogout.y + btnLogout.height - 5, btnLogout.width, 5, Color{0,0,0,100});
-            DrawRectangleLinesEx(btnLogout, 3, GOLD);
-            DrawText("LOGOUT & SAVE", btnLogout.x + (btnLogout.width - MeasureText("LOGOUT & SAVE", 22))/2, btnLogout.y + 15, 22, GOLD);
-
-            EndDrawing();
-        }
-        // ==========================================
-        // STATE 3: หน้า HOW TO PLAY (โชว์รูปภาพ)
-        // ==========================================
-        else if (screenState == 3) {
-            Rectangle btnBack = { 30, 30, 100, 40 };
-
-            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) {
-                screenState = 2; // กลับไปหน้าคาสิโน Hub
-            }
-
-            BeginDrawing();
-            ClearBackground(BLACK);
-
-            if (htpImage.id != 0) {
-                // วาดรูปภาพ ถ้าโหลดสำเร็จ
-                DrawTexture(htpImage, 0, 0, WHITE);
+                bool begHover = CheckCollisionPointRec(mousePos, btnBegMoney);
+                DrawRectangleRounded(btnBegMoney, 0.2f, 10, begHover ? GOLD : YELLOW);
+                DrawText("BEG FOR $1000", btnBegMoney.x + (btnBegMoney.width - MeasureText("BEG FOR $1000", 25))/2, btnBegMoney.y + 18, 25, BLACK);
             } else {
-                // แจ้งเตือนถ้ารูปโหลดไม่ขึ้น
-                DrawText("IMAGE NOT FOUND", centerX - MeasureText("IMAGE NOT FOUND", 40)/2, centerY, 40, RED);
-                DrawText("Make sure 'howtoplay.png' is in the exact same folder as the .exe", centerX - MeasureText("Make sure 'howtoplay.png' is in the exact same folder as the .exe", 20)/2, centerY + 50, 20, LIGHTGRAY);
+                Rectangle mBtns[] = { btnSlot, btnHilo, btnBlackjack, btnBingo };
+                const char* mLbls[] = { "SLOT MACHINE", "HI-LO GAME", "BLACKJACK 21", "BINGO BONANZA" };
+                for(int i=0; i<4; i++) {
+                    bool h = CheckCollisionPointRec(mousePos, mBtns[i]);
+                    DrawRectangleRounded({ mBtns[i].x + 3, mBtns[i].y + 3, mBtns[i].width, mBtns[i].height }, 0.2f, 10, Color{ 0, 0, 0, 100 }); 
+                    DrawRectangleRounded(mBtns[i], 0.2f, 10, h ? SKYBLUE : RAYWHITE);
+                    DrawText(mLbls[i], mBtns[i].x + (mBtns[i].width - MeasureText(mLbls[i], 22))/2, mBtns[i].y + 16, 22, BLACK);
+                }
             }
 
-            // วาดปุ่ม BACK ทับรูป
-            DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON);
-            DrawRectangleLinesEx(btnBack, 2, WHITE);
-            DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
+            // ปุ่ม Logout
+            bool logHover = CheckCollisionPointRec(mousePos, btnLogout);
+            DrawRectangleRounded(btnLogout, 0.2f, 10, logHover ? RED : MAROON);
+            DrawText("LOGOUT & SAVE", btnLogout.x + (btnLogout.width - MeasureText("LOGOUT & SAVE", 22))/2, btnLogout.y + 16, 22, WHITE);
 
-            EndDrawing();
+            EndDrawing(); // จบการวาด
         }
     }
 
-    // =========================================================
-    // ส่วนที่ 4: คืนหน่วยความจำและเซฟก่อนออก
-    // =========================================================
-    UnloadTexture(htpImage); // ลบรูปออกจากแรม
-
-    if (screenState == 2 && p1.name != "Guest Player") {
-        Auth::SaveUser(p1, currentPassword);
-    }
-
-    CloseWindow();
+    // จัดการข้อมุลก่อนปิดโปรแกรม 
+    // ถ้าผู้เล่นกดปิดหน้าต่างไปเลย ให้เซฟข้อมูลก่อนถ้าไม่ได้เป็น Guest
+    if (screenState == 2 && p1.name != "Guest Player") Auth::SaveUser(p1, currentPassword);
+    
+    CloseWindow(); //ปิดหน้าต่าง
     return 0;
 }

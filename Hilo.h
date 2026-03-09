@@ -10,21 +10,23 @@
 
 using namespace std;
 
-// --- ลอจิกการทอยเต๋า ---
+//ฟังก์ชันสุ่มตัวเลขลูกเต๋า 1 ลูก (คืนค่าเลข 1 ถึง 6)
 inline int rollDiceLogic() { return rand() % 6 + 1; }
 
-// --- ฟังก์ชันวาดลูกเต๋าสมจริง ---
+// วาดรูปทรงลูกเต๋า
 static void DrawDiceUI(float x, float y, float size, int value) {
+    // วาดพื้นหลังสี่เหลี่ยมสีขาว
     DrawRectangle(x, y, size, size, RAYWHITE);
-    DrawRectangleLinesEx({x, y, size, size}, 4, BLACK);
     
-    float d = size / 4.0f; 
-    float c = size / 2.0f; 
-    float r = size / 10.0f; 
-    
-    Color dotC = BLACK;
+    // พิกัดจุดบนหน้าเต๋า
+    float d = size / 4.0f;  // ระยะห่างจากขอบ
+    float c = size / 2.0f;  // จุดกึ่งกลาง
+    float r = size / 10.0f; // รัศมีของจุดเต๋า
+    Color dotC = BLACK;     // สีจุดปกติ
+
+    // ตรวจสอบค่าลูกเต๋าเพื่อวาดจุดในตำแหน่งที่ถูกต้อง (1-6)
     if (value == 1) { 
-        DrawCircle(x+c, y+c, r*1.5f, RED); 
+        DrawCircle(x+c, y+c, r*1.5f, RED); // เลข 1: จุดแดงใหญ่ตรงกลาง
     } else if (value == 2) { 
         DrawCircle(x+d, y+d, r, dotC); DrawCircle(x+size-d, y+size-d, r, dotC); 
     } else if (value == 3) { 
@@ -43,87 +45,99 @@ static void DrawDiceUI(float x, float y, float size, int value) {
 }
 
 void playHiloUI(Player &p) {
+    // ตั้งค่าหน้าจอ
     const int screenWidth = 1280;
     const int screenHeight = 720;
     float centerX = screenWidth / 2.0f;
     float centerY = screenHeight / 2.0f;
 
-    // --- โหลดรูปภาพ How to play สำหรับ Hi-Lo ---
-    Texture2D htpHL = LoadTexture("howtoplay/hl.png");
+    // โหลดรูปภาพวิธีเล่น
+    Texture2D htpImg = LoadTexture("howtoplay/hl.png");
 
-    int choice = 1;      
-    int hlChoice = 1;    
-    int guessTriple = 1; 
-    int guessSum = 10;   
-    int luckyNumber = 1; 
-    int winStreak = 0;
+    int choice = 1;       // โหมดการทาย (1: สูง/ต่ำ, 2: ตอง, 3: ผลรวม)
+    int hlChoice = 1;     // เลือกทาย ต่ำ(1) หรือ สูง(2)
+    int guessTriple = 1;  // เลือกเลขตองที่จะทาย (1-6)
+    int guessSum = 10;    // เลือกเลขผลรวมที่จะทาย (3-18)
+    int luckyNumber = 1;  // เลขนำโชค
+    int winStreak = 0;    // สถิติการชนะต่อเนื่อง
     
     int bet = 0;
     string betInput = "50"; 
-    bool betBoxActive = false;
+    bool betBoxActive = false; // สถานะการพิมพ์ในกล่องเดิมพัน
 
-    int dice[3] = {1, 1, 1};
-    bool isRolling = false;
-    float rollTimer = 0.0f;
+    int dice[3] = {1, 1, 1}; // เก็บผลลัพธ์ลูกเต๋า 3 ลูก
+    bool isRolling = false;  // สถานะว่ากำลังเขย่าลูกเต๋าอยู่หรือไม่
+    float rollTimer = 0.0f;  // ตัวนับเวลาสำหรับ animation การเขย่า
     string sysMsg = "Adjust Bet, select Mode/Lucky No, then ROLL!";
     Color msgColor = RAYWHITE;
 
-    // gameState: 0 = normal, 3 = How To Play
-    int hiloState = 0; 
+    int gameState = 0; // 0=หน้าหลัก/เดิมพัน, 3=หน้าวิธีเล่น
 
-    Rectangle btnRoll   = { centerX - 120, 620, 240, 60 };
-    Rectangle boxBet    = { 380, 515, 200, 45 }; 
+    //กำหนดตำแหน่งปุ่ม
     Rectangle btnBack   = { 30, 30, 100, 40 };
-    Rectangle btnHTP    = { 30, 80, 150, 40 }; // ปุ่มวิธีเล่น
+    Rectangle btnHTP    = { 30, 80, 150, 40 }; 
+    Rectangle boxBet    = { centerX - 260, 520, 200, 45 }; // กล่องเดิมพัน
+    Rectangle btnRoll   = { centerX - 120, 620, 240, 60 }; // ปุ่มทอยเต๋า
+
+    int frameDelay = 0; // ป้องกันบัคจากการคลิกเมาส์เfร็วเกิน
 
     while (!WindowShouldClose()) {
+        frameDelay++;
         Vector2 mousePos = GetMousePosition();
-        bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+        // เช็คการคลิกเมาส์ซ้ายพร้อมหน่วงเวลา
+        bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (frameDelay > 10);
 
+        // พิกัดปุ่มเลือกโหมดการเล่น
         Rectangle rMode1 = { 380, 280, 180, 45 }; 
         Rectangle rMode2 = { 580, 280, 180, 45 }; 
         Rectangle rMode3 = { 780, 280, 180, 45 }; 
 
-        if (hiloState == 0) { // หน้าเล่นปกติ
+        //ส่วนของการคำนวณ
+        if (gameState == 0) {
             if (!isRolling) {
                 if (isClick) {
-                    if (CheckCollisionPointRec(mousePos, btnBack)) {
-                        UnloadTexture(htpHL);
-                        return;
-                    }
-                    if (CheckCollisionPointRec(mousePos, btnHTP)) hiloState = 3;
+                    // ปุ่มย้อนกลับและวิธีเล่น
+                    if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(htpImg); return; }
+                    if (CheckCollisionPointRec(mousePos, btnHTP)) gameState = 3;
+                    
+                    // เปิด/ปิดการพิมพ์ในกล่อง Bet
+                    if (CheckCollisionPointRec(mousePos, boxBet)) betBoxActive = true; else betBoxActive = false;
 
-                    if (CheckCollisionPointRec(mousePos, boxBet)) betBoxActive = true;
-                    else betBoxActive = false;
-
+                    // เปลี่ยนโหมดการเล่น (High-Low / Triple / Sum)
                     if (CheckCollisionPointRec(mousePos, rMode1)) choice = 1;
                     if (CheckCollisionPointRec(mousePos, rMode2)) choice = 2;
                     if (CheckCollisionPointRec(mousePos, rMode3)) choice = 3;
 
-                    if (choice == 1) {
-                        if (CheckCollisionPointRec(mousePos, { 380, 345, 150, 40 })) hlChoice = 1;
-                        if (CheckCollisionPointRec(mousePos, { 550, 345, 150, 40 })) hlChoice = 2;
-                    } else if (choice == 2) {
+                    // เลือกเงื่อนไขย่อยตามโหมดที่เลือก
+                    if (choice == 1) { // โหมด สูง-ต่ำ
+                        if (CheckCollisionPointRec(mousePos, { 380, 345, 150, 40 })) hlChoice = 1; // LOW
+                        if (CheckCollisionPointRec(mousePos, { 550, 345, 150, 40 })) hlChoice = 2; // HIGH
+                    } else if (choice == 2) { // โหมด เลขตอง
                         for(int i=1; i<=6; i++) 
                             if (CheckCollisionPointRec(mousePos, { 380.0f + ((i-1)*70), 345, 60, 40 })) guessTriple = i;
-                    } else if (choice == 3) {
+                    } else if (choice == 3) { // โหมด ทายผลรวม
                         if (CheckCollisionPointRec(mousePos, { 380, 345, 60, 40 }) && guessSum > 3) guessSum--;
                         if (CheckCollisionPointRec(mousePos, { 600, 345, 60, 40 }) && guessSum < 18) guessSum++;
                     }
 
+                    // เลือกเลขนำโชค (ออกกี่ลูก ได้เงินคืนลูกละ 1 เท่า)
                     for(int i=1; i<=6; i++)
                         if (CheckCollisionPointRec(mousePos, { 380.0f + ((i-1)*70), 430, 60, 40 })) luckyNumber = i;
 
+                    // เมื่อกดปุ่ม ROLL (เริ่มทอยเต๋า)
                     if (CheckCollisionPointRec(mousePos, btnRoll)) {
-                        bet = atoi(betInput.c_str()); 
-                        if (bet <= 0) { sysMsg = "Bet must be > 0!"; msgColor = RED; }
-                        else if (p.credit >= bet) {
-                            p.credit -= bet; isRolling = true; betBoxActive = false; rollTimer = 0.0f;
+                        bet = atoi(betInput.c_str()); // แปลง String เป็นตัวเลข
+                        if (p.credit >= bet && bet > 0) {
+                            p.credit -= bet; // หักเงินเดิมพัน
+                            isRolling = true; betBoxActive = false; rollTimer = 0.0f;
                             sysMsg = "Shaking..."; msgColor = RAYWHITE;
-                        } else { sysMsg = "Not enough credits!"; msgColor = RED; }
+                        } else { 
+                            sysMsg = (bet <= 0) ? "Bet must be > 0!" : "Not enough credits!"; 
+                            msgColor = RED; 
+                        }
                     }
                 }
-
+                // จัดการการพิมพ์ตัวเลขเดิมพันผ่านคีย์บอร์ด
                 if (betBoxActive) {
                     int key = GetCharPressed();
                     while (key > 0) {
@@ -133,69 +147,80 @@ void playHiloUI(Player &p) {
                     if (IsKeyPressed(KEY_BACKSPACE) && betInput.length() > 0) betInput.pop_back();
                 }
             } else {
+                //จำลองการเขย่าลูกเต๋าโดยสุ่มเลขรัวๆ1.5 วินาที
                 rollTimer += GetFrameTime();
                 dice[0] = rollDiceLogic(); dice[1] = rollDiceLogic(); dice[2] = rollDiceLogic();
                 
-                if (rollTimer >= 1.5f) {
+                if (rollTimer >= 1.5f) { // เมื่อเขย่าเสร็จ
                     isRolling = false;
                     int sum = dice[0] + dice[1] + dice[2];
                     bool win = false; int reward = 0;
 
-                    if (choice == 1) {
-                        if (!(dice[0] == dice[1] && dice[1] == dice[2])) { 
+                    // ตรวจสอบรางวัลตามโหมดที่เลือก
+                    if (choice == 1) { // สูง/ต่ำ
+                        if (!(dice[0] == dice[1] && dice[1] == dice[2])) { // เจ้ามือกินตอง
                             if (hlChoice == 1 && sum >= 4 && sum <= 10) { win = true; reward = bet * 2; }
                             else if (hlChoice == 2 && sum >= 11 && sum <= 17) { win = true; reward = bet * 2; }
                         }
-                    } else if (choice == 2) {
+                    } else if (choice == 2) { // ตอง
                         if (dice[0] == dice[1] && dice[1] == dice[2] && dice[0] == guessTriple) { win = true; reward = bet * 5; }
-                    } else if (choice == 3) {
+                    } else if (choice == 3) { // ผลรวม
                         if (sum == guessSum) { win = true; reward = bet * 3; }
                     }
 
+                    // เช็คเลขนำโชค (ได้เงินคืนเพิ่ม)
                     int luckyCount = 0;
                     for(int i=0; i<3; i++) if (dice[i] == luckyNumber) luckyCount++;
 
+                    // สรุปผลเงินรางวัลและบันทึกสถิติ
                     if (win) {
                         p.credit += reward; winStreak++; p.win_count++;
-                        sysMsg = TextFormat("WIN! +$%d (Total)", reward + (luckyCount * bet)); msgColor = GREEN;
+                        sysMsg = TextFormat("WIN! +$%d", reward + (luckyCount * bet)); msgColor = GREEN;
                     } else {
                         winStreak = 0; p.loss_count++;
-                        if (luckyCount > 0) { sysMsg = TextFormat("LOSE.. But Lucky No gave +$%d", luckyCount * bet); msgColor = YELLOW; }
-                        else { sysMsg = "LOSE!"; msgColor = RED; }
+                        sysMsg = (luckyCount > 0) ? TextFormat("Lucky No gave +$%d", luckyCount * bet) : "LOSE!"; 
+                        msgColor = (luckyCount > 0) ? YELLOW : RED;
                     }
-                    p.credit += (luckyCount * bet);
+                    p.credit += (luckyCount * bet); // คืนเงินจากเลขนำโชค
                 }
             }
-        } else if (hiloState == 3) { // หน้า How to play
-            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) hiloState = 0;
+        } else if (gameState == 3) { // หน้าวิธีเล่น
+            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) gameState = 0;
         }
 
+        // ส่วนของการวาดผลลัพธ์
         BeginDrawing();
-        ClearBackground(Color{ 10, 60, 20, 255 }); 
+        ClearBackground(Color{ 10, 50, 20, 255 }); // สีเขียว
 
-        if (hiloState == 3) {
-            if (htpHL.id != 0) DrawTexture(htpHL, 0, 0, WHITE);
-            else DrawText("IMAGE NOT FOUND: howtoplay/hl.png", centerX - 250, centerY, 20, RED);
-
-            DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON); 
+        if (gameState == 3) { // แสดงภาพวิธีเล่น
+            if (htpImg.id != 0) DrawTexture(htpImg, 0, 0, WHITE);
+            DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON);
             DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
         } else {
-            DrawText("HI-LO CASINO", (screenWidth - MeasureText("HI-LO CASINO", 40)) / 2, 20, 40, GOLD);
-            DrawText(TextFormat("Credits: $%.2f | Streak: %d", p.credit, winStreak), (screenWidth - MeasureText(TextFormat("Credits: $%.2f | Streak: %d", p.credit, winStreak), 25)) / 2, 70, 25, WHITE);
-
-            int diceBoxSize = 100;
-            int startDiceX = centerX - (diceBoxSize * 1.5f) - 20; 
-            for (int i = 0; i < 3; i++) DrawDiceUI(startDiceX + (i * 140), 120, diceBoxSize, dice[i]);
+            //หัวข้อเกม
+            DrawText("HI-LO CASINO", centerX - MeasureText("HI-LO CASINO", 40)/2, 20, 40, GOLD);
             
-            DrawText(sysMsg.c_str(), (screenWidth - MeasureText(sysMsg.c_str(), 25)) / 2, 235, 25, msgColor);
-            DrawRectangle(140, 270, 1000, 315, Color{0, 0, 0, 100});
+            //แสดงข้อมูลผู้เล่น
+            DrawText(TextFormat("Credits: $%.2f", p.credit), 1050, 30, 22, WHITE);
+            DrawText(TextFormat("Streak: %d", winStreak), 1050, 55, 22, GOLD);
 
-            // SELECT MODE
+            //วาดลูกเต๋า 3 ลูก
+            int dSize = 100; float dStartX = centerX - (dSize * 1.5f) - 20; 
+            for (int i = 0; i < 3; i++) DrawDiceUI(dStartX + (i * 140), 110, dSize, dice[i]);
+            
+            //ข้อความแจ้งเตือนระบบ
+            DrawText(sysMsg.c_str(), centerX - MeasureText(sysMsg.c_str(), 25)/2, 230, 25, msgColor);
+            
+            //พื้นหลังแผงควบคุม
+            DrawRectangle(140, 270, 1000, 320, Color{0, 0, 0, 100});
+
+            //เลือกโหมด (Mode Selection)
             DrawText("1. SELECT MODE:", 180, 290, 20, WHITE);
             DrawRectangleRec(rMode1, (choice == 1) ? GOLD : GRAY); DrawText("High/Low", rMode1.x+45, rMode1.y+12, 20, BLACK);
             DrawRectangleRec(rMode2, (choice == 2) ? GOLD : GRAY); DrawText("Triple", rMode2.x+60, rMode2.y+12, 20, BLACK);
             DrawRectangleRec(rMode3, (choice == 3) ? GOLD : GRAY); DrawText("Sum", rMode3.x+70, rMode3.y+12, 20, BLACK);
 
+            //วาดตัวเลือกย่อยของแต่ละโหมด
             if (choice == 1) {
                 DrawRectangleRec({ 380, 345, 150, 40 }, (hlChoice == 1) ? ORANGE : GRAY); DrawText("LOW", 430, 355, 20, BLACK);
                 DrawRectangleRec({ 550, 345, 150, 40 }, (hlChoice == 2) ? ORANGE : GRAY); DrawText("HIGH", 595, 355, 20, BLACK);
@@ -205,36 +230,40 @@ void playHiloUI(Player &p) {
                     DrawRectangleRec(r, (guessTriple == i) ? ORANGE : GRAY); DrawText(TextFormat("%d", i), r.x+25, r.y+10, 20, BLACK);
                 }
             } else if (choice == 3) {
-                DrawRectangleRec({ 380, 345, 60, 40 }, GRAY); DrawText("-", 403, 350, 30, BLACK);
                 DrawText(TextFormat("SUM: %d", guessSum), 465, 350, 25, YELLOW);
+                DrawRectangleRec({ 380, 345, 60, 40 }, GRAY); DrawText("-", 403, 350, 30, BLACK);
                 DrawRectangleRec({ 600, 345, 60, 40 }, GRAY); DrawText("+", 620, 350, 30, BLACK);
             }
 
-            // LUCKY NO
+            //เลือกเลขนำโชค (Lucky Number)
             DrawText("2. LUCKY NO:", 180, 440, 20, SKYBLUE);
             for(int i=1; i<=6; i++) {
                 Rectangle r = { 380.0f + ((i-1)*70), 430, 60, 40 };
                 DrawRectangleRec(r, (luckyNumber == i) ? SKYBLUE : GRAY); DrawText(TextFormat("%d", i), r.x+25, r.y+10, 20, BLACK);
             }
 
-            // BET AMOUNT
-            DrawText("3. BET AMOUNT:", 180, 525, 20, PINK);
+            //  กำหนดเงินเดิมพัน (Bet Area)
+            DrawText("3. BET AMOUNT:", 180, 532, 20, PINK);
             DrawRectangleRec(boxBet, betBoxActive ? RAYWHITE : LIGHTGRAY);
+            // ไฮไลท์สีทองเมื่อกล่อง Bet ถูกเลือก
+            DrawRectangleLinesEx(boxBet, 2, betBoxActive ? GOLD : BLACK);
             DrawText(betInput.c_str(), boxBet.x+15, boxBet.y+8, 30, BLACK);
 
-            // ROLL BUTTON
+            // ปุ่มทอยเต๋า (ROLL)
             DrawRectangleRec(btnRoll, isRolling ? DARKGRAY : RED);
             DrawRectangleLinesEx(btnRoll, 4, isRolling ? LIGHTGRAY : GOLD);
             DrawText(isRolling ? "SHAKING..." : "ROLL DICE", btnRoll.x+60, btnRoll.y+18, 25, GOLD);
 
-            // BACK & HTP
+            // ปุ่ม BACK และ วิธีการเล่น
             DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON); 
             DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
-            DrawRectangleRec(btnHTP, CheckCollisionPointRec(mousePos, btnHTP) ? GRAY : DARKGRAY);
-            DrawText("HOW TO PLAY", btnHTP.x + 15, btnHTP.y + 10, 18, RAYWHITE);
+            if (!isRolling) {
+                DrawRectangleRec(btnHTP, CheckCollisionPointRec(mousePos, btnHTP) ? GRAY : DARKGRAY);
+                DrawText("HOW TO PLAY", btnHTP.x + 15, btnHTP.y + 10, 18, WHITE);
+            }
         }
         EndDrawing();
     }
-    UnloadTexture(htpHL);
+    UnloadTexture(htpImg);
 }
 #endif
