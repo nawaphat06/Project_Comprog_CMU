@@ -114,15 +114,31 @@ void playBingoUI(Player &p) {
     while (!WindowShouldClose()) {
         frameDelay++; 
         Vector2 mousePos = GetMousePosition();
-        // เช็คการคลิกเมาส์พร้อมตัวหน่วงเวลา (frameDelay > 10)
         bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (frameDelay > 10);
 
-        // ส่วนประมวลผลคลิก
+        if (isClick) {
+            if (CheckCollisionPointRec(mousePos, btnBack)) {
+                if (gameState == 3) {
+                    // ถ้าอยู่หน้าสอนเล่น พอกด Back ให้กลับไปหน้าเดิม
+                    gameState = previousState;
+                    frameDelay = 0;
+                } else {
+                    // ถ้าอยู่หน้าอื่นๆ (0, 1, 2) แล้วกด Back  = อยากออกเกมบิงโกไปmain
+                    UnloadTexture(howToPlayImg);
+                    return; 
+                }
+            }
+            if (CheckCollisionPointRec(mousePos, btnHowToPlay) && gameState != 3) {
+                // กดปุ่ม How to Play สถานะแล้วเข้าสู่หน้า 3
+                previousState = gameState;
+                gameState = 3;
+                frameDelay = 0;
+            }
+        }
+
+        //หน้า bet
         if (gameState == 0) { // เลือกกระดานและวางเงิน
             if (isClick) {
-                if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(howToPlayImg); return; } // ออกไปเมนูหลัก
-                if (CheckCollisionPointRec(mousePos, btnHowToPlay)) { previousState = 0; gameState = 3; frameDelay = 0; } //กันคลิกเบิ้ล
-                
                 if (CheckCollisionPointRec(mousePos, btnSelect1)) selectedCard = 1;
                 if (CheckCollisionPointRec(mousePos, btnSelect2)) selectedCard = 2;
                 if (CheckCollisionPointRec(mousePos, btnReroll)) {
@@ -153,6 +169,7 @@ void playBingoUI(Player &p) {
                         gameState = 1; // เริ่มเล่น
                         msgColor = RAYWHITE;
                         sysMsg = (game.win_type == 0) ? "MODE: ROW WIN" : (game.win_type == 1) ? "MODE: CROSS WIN" : "MODE: COLUMN WIN";
+                        frameDelay = 0;
                     } else {
                         sysMsg = (bet <= 0) ? "Bet must be > 0!" : "Not enough credits!"; msgColor = RED;
                     }
@@ -168,9 +185,6 @@ void playBingoUI(Player &p) {
                 if (IsKeyPressed(KEY_BACKSPACE) && betInput.length() > 0) betInput.pop_back();
             }
         } else if (gameState == 1) { // จั่วบอล
-            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(howToPlayImg); return; } // ออกไปเมนูหลักเลยถ้ากดออกขระเล่น
-            if (isClick && CheckCollisionPointRec(mousePos, btnHowToPlay)) { previousState = 1; gameState = 3; frameDelay = 0; } //กันคลิกเบิ้ล
-
             if (isClick && CheckCollisionPointRec(mousePos, btnDraw)) {
                 if (!ballPool.empty()) {
                     lastBall = ballPool.back(); ballPool.pop_back(); // จั่วบอลออกจากถุง
@@ -190,21 +204,13 @@ void playBingoUI(Player &p) {
                 }
             }
         } else if (gameState == 2) { // จบเกม
-            if (isClick) {
-                if (CheckCollisionPointRec(mousePos, btnDraw)) { // ปุ่มเล่นใหม่
-                    gameState = 0; lastBall = 0; drawnBalls.clear();
-                    game.randbingo(card1); game.randbingo(card2);
-                    sysMsg = "Adjust Bet & Choose your Card!"; msgColor = RAYWHITE;
-                }
-                if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(howToPlayImg); return; } // ออกไปเมนูหลัก
-                if (CheckCollisionPointRec(mousePos, btnHowToPlay)) { previousState = 2; gameState = 3; frameDelay = 0; } //กันคลิกเบิ้ล
+            if (isClick && CheckCollisionPointRec(mousePos, btnDraw)) { // ปุ่มเล่นใหม่
+                gameState = 0; lastBall = 0; drawnBalls.clear();
+                game.randbingo(card1); game.randbingo(card2);
+                sysMsg = "Adjust Bet & Choose your Card!"; msgColor = RAYWHITE;
+                frameDelay = 0;
             }
-        } else if (gameState == 3) { // หน้าสอนเล่น
-            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) {
-                gameState = previousState; // คืนค่ากลับไปหน้าเดิมก่อนเข้าวิธีเล่น
-                frameDelay = 0; //กันคลิ๊กเบิ้ล
-            }
-        }
+        } 
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////
         //ส่วนการวาดกราฟิก

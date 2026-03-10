@@ -46,6 +46,8 @@ static SlotSymbol spinSlotSymbol() {
         if (rnd < slotSymbols[i].weight) return slotSymbols[i];
         rnd -= slotSymbols[i].weight;
     }
+    return slotSymbols.back();
+}
 
 void playSlotUI(Player &p) {
     //ตั้งค่าตำแหน่งหน้าจอ
@@ -61,7 +63,7 @@ void playSlotUI(Player &p) {
     string betInput = "10"; 
     bool betBoxActive = false; //สถานะว่ากำลังพิมพ์กล่องเดิมพันอยู่หรือไม่
 
-    //สร้างกระดาน 3x3 เก็บสัญลักษณ์เริ่มต้นเป็นเลข "10"
+    //สร้างกระดาน 3x3 เก็บสัญลักษณ์เริ่มต้นเป็นเลข10
     vector<vector<SlotSymbol>> board(3, vector<SlotSymbol>(3, slotSymbols[7])); 
     
     //ตาราง 3x3 เพื่อบันทึกว่าช่องไหนบ้างที่ทำเงิน (ไฮไลท์สีเขียว)
@@ -69,6 +71,8 @@ void playSlotUI(Player &p) {
 
     // gameState: 0 = เล่นปกติ, 3 = หน้าจอวิธีเล่น
     int gameState = 0; 
+    int previousState = 0;
+
     bool isSpinning = false; // สถานะว่ากำลังหมุนอยู่หรือไม่
     float spinTimer = 0.0f;  // ตัวนับเวลาสำหรับ animation ตอนหมุน
     string sysMsg = "Enter Bet and Press SPIN!";
@@ -85,17 +89,31 @@ void playSlotUI(Player &p) {
     while (!WindowShouldClose()) {
         frameDelay++;
         Vector2 mousePos = GetMousePosition();
-        // เช็คการคลิกพร้อมตัวหน่วงเวลา (frameDelay > 10)
         bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (frameDelay > 10);
 
-        //ส่วนของการประมวลผล
+        if (isClick && !isSpinning) { 
+            if (CheckCollisionPointRec(mousePos, btnBack)) {
+                if (gameState == 3) {
+                    // ถ้าอยู่หน้าสอนเล่น พอกด Back ให้กลับไปหน้าเดิม
+                    gameState = previousState;
+                    frameDelay = 0;
+                } else {
+                    // ถ้าอยู่หน้าเกมปกติ แล้วกด Back ออกไปคาสิโน Hub
+                    UnloadTexture(htpImg);
+                    return; 
+                }
+            }
+            if (CheckCollisionPointRec(mousePos, btnHTP) && gameState != 3) {
+                previousState = gameState;
+                gameState = 3;
+                frameDelay = 0;
+            }
+        }
+
+        //ส่วนของการประมวลผลอื่นๆ (State 0)
         if (gameState == 0) {
             if (!isSpinning) {
                 if (isClick) {
-                    // ปุ่มย้อนกลับ
-                    if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(htpImg); return; }
-                    // ปุ่มเปิดวิธีเล่น
-                    if (CheckCollisionPointRec(mousePos, btnHTP)) gameState = 3;
                     // เช็คคลิกที่กล่อง Bet
                     if (CheckCollisionPointRec(mousePos, boxBet)) betBoxActive = true; else betBoxActive = false;
                     
@@ -108,6 +126,7 @@ void playSlotUI(Player &p) {
                             betBoxActive = false; 
                             spinTimer = 0.0f;
                             sysMsg = "Spinning..."; msgColor = RAYWHITE;
+                            frameDelay = 0; // กันคลิกเบิ้ล
                             // ล้างสถานะชนะของรอบเก่า
                             for(int i=0; i<3; i++) for(int j=0; j<3; j++) winCells[i][j] = false;
                         } else {
@@ -168,10 +187,7 @@ void playSlotUI(Player &p) {
                     }
                 }
             }
-        } else if (gameState == 3) { 
-            //อยู่ในหน้าวิธีเล่น ถ้ากด Back ให้กลับไปหน้า 0
-            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) gameState = 0;
-        }
+        } 
 
         //////////////////////////////////////////////////////////////////////////////////////////////////
         //ส่วนของการวาดกราฟิก
@@ -185,7 +201,6 @@ void playSlotUI(Player &p) {
             DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON); 
             DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
         } else {
-            // ส่วนหัว (Title และ Credits)
             DrawText("SCAMMER SLOT", centerX - MeasureText("SCAMMER SLOT", 40)/2, 20, 40, GOLD);
             DrawText(TextFormat("Credits: $%.2f", p.credit), 1050, 30, 25, GOLD);
             
@@ -235,9 +250,10 @@ void playSlotUI(Player &p) {
             DrawRectangleLinesEx(btnSpin, 4, GOLD);
             DrawText(isSpinning ? "SPINNING..." : "SPIN", btnSpin.x + (btnSpin.width - MeasureText(isSpinning ? "SPINNING..." : "SPIN", 35))/2, btnSpin.y + 10, 35, GOLD);
             
-            // ปุ่ม Back
-            DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON); 
-            DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
+            if (!isSpinning) {
+                DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON); 
+                DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
+            }
 
             // ตารางสรุปรางวัลด้านข้าง
             int ptX = 950, ptY = 200; 
