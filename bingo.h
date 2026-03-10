@@ -199,15 +199,14 @@ void playBingoUI(Player &p) {
             if (isClick && CheckCollisionPointRec(mousePos, btnBack)) gameState = 0;
         }
 
+        /////////////////////////////////////////////////////////////////////////////////////////////////////
         //ส่วนการวาดกราฟิก
         BeginDrawing();
-        ClearBackground(Color{ 10, 20, 45, 255 }); 
+        ClearBackground(Color{ 10, 20, 45, 255 });//พื้นหลัง
 
         if (gameState == 3) { // หน้าวิธีเล่น
             if (howToPlayImg.id != 0) DrawTexture(howToPlayImg, 0, 0, WHITE);
-            else DrawText("IMAGE NOT FOUND", centerX - MeasureText("IMAGE NOT FOUND", 40)/2, centerY, 40, RED);
             DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON); 
-            DrawRectangleLinesEx(btnBack, 2, WHITE);
             DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
         } else {
             // ชื่อเกมและเครดิต
@@ -249,9 +248,9 @@ void playBingoUI(Player &p) {
                 if (selectedCard == 1) DrawRectangleLinesEx({(float)c1X-6, (float)cY-6, (float)gridW+12, (float)gridW+12}, 6, LIME);
                 if (selectedCard == 2) DrawRectangleLinesEx({(float)c2X-6, (float)cY-6, (float)gridW+12, (float)gridW+12}, 6, LIME);
                 DrawRectangleRec(btnSelect1, (selectedCard == 1) ? LIME : GRAY);
-                DrawText("SELECT CARD 1", btnSelect1.x + 35, btnSelect1.y + 12, 20, BLACK);
+                DrawText("SELECT CARD 1", btnSelect1.x + 30, btnSelect1.y + 12, 20, BLACK);
                 DrawRectangleRec(btnSelect2, (selectedCard == 2) ? LIME : GRAY);
-                DrawText("SELECT CARD 2", btnSelect2.x + 35, btnSelect2.y + 12, 20, BLACK);
+                DrawText("SELECT CARD 2", btnSelect2.x + 30, btnSelect2.y + 12, 20, BLACK);
 
             } else if (gameState == 1 || gameState == 2) { // วาด UI ช่วงเล่นจริง
                 DrawText(sysMsg.c_str(), centerX - MeasureText(sysMsg.c_str(), 30)/2, 100, 30, msgColor);
@@ -263,12 +262,12 @@ void playBingoUI(Player &p) {
                         int x = c1X + j*(boxSize+spacing); int y = cY + i*(boxSize+spacing);
                         DrawRectangle(x, y, boxSize, boxSize, game.player_score[i][j] ? ORANGE : RAYWHITE);
                         if(game.player_paper[i][j] != 0) DrawText(to_string(game.player_paper[i][j]).c_str(), x+15, y+15, 30, DARKBLUE);
-                        else DrawText("FREE", x+8, y+20, 20, WHITE);
+                        else DrawText("FREE", x+2, y+20, 20, WHITE);
                         // Enemy Status Table
                         int xe = c2X + j*(boxSize+spacing); int ye = cY + i*(boxSize+spacing);
                         DrawRectangle(xe, ye, boxSize, boxSize, game.enemy_score[i][j] ? MAROON : LIGHTGRAY);
                         if(game.enemy_paper[i][j] != 0) DrawText(to_string(game.enemy_paper[i][j]).c_str(), xe+15, ye+15, 30, DARKGRAY);
-                        else DrawText("FREE", xe+8, ye+20, 20, LIGHTGRAY);
+                        else DrawText("FREE", xe+2, ye+20, 20, LIGHTGRAY);
                     }
                 }
 

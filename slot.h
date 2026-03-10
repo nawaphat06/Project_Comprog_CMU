@@ -173,6 +173,7 @@ void playSlotUI(Player &p) {
             if (isClick && CheckCollisionPointRec(mousePos, btnBack)) gameState = 0;
         }
 
+        //////////////////////////////////////////////////////////////////////////////////////////////////
         //ส่วนของการวาดกราฟิก
         BeginDrawing();
         ClearBackground(Color{ 10, 30, 70, 255 }); // สีพื้นหลังโทนน้ำเงินเข้ม

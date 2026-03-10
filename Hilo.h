@@ -1,4 +1,4 @@
-#ifndef HILO_UI_H
+#ifndef HILO_UI_H //ใช้ป้องกันการ include ซ้ำ
 #define HILO_UI_H
 
 #include "raylib.h"
@@ -48,12 +48,13 @@ void playHiloUI(Player &p) {
     // ตั้งค่าหน้าจอ
     const int screenWidth = 1280;
     const int screenHeight = 720;
-    float centerX = screenWidth / 2.0f;
-    float centerY = screenHeight / 2.0f;
+    float centerX = screenWidth / 2.0f; // จุดกึ่งกลาง x
+    float centerY = screenHeight / 2.0f; // จุดกึ่งกลาง y
 
     // โหลดรูปภาพวิธีเล่น
     Texture2D htpImg = LoadTexture("howtoplay/hl.png");
 
+    //ลิ้งกับ UI
     int choice = 1;       // โหมดการทาย (1: สูง/ต่ำ, 2: ตอง, 3: ผลรวม)
     int hlChoice = 1;     // เลือกทาย ต่ำ(1) หรือ สูง(2)
     int guessTriple = 1;  // เลือกเลขตองที่จะทาย (1-6)
@@ -63,29 +64,29 @@ void playHiloUI(Player &p) {
     
     int bet = 0;
     string betInput = "50"; 
-    bool betBoxActive = false; // สถานะการพิมพ์ในกล่องเดิมพัน
+    bool betBoxActive = false; // สถานะการพิมพ์ในกล่องเดิมพัน ไฮไลท์ตอนกดจะเรืองเเเสง
 
     int dice[3] = {1, 1, 1}; // เก็บผลลัพธ์ลูกเต๋า 3 ลูก
     bool isRolling = false;  // สถานะว่ากำลังเขย่าลูกเต๋าอยู่หรือไม่
     float rollTimer = 0.0f;  // ตัวนับเวลาสำหรับ animation การเขย่า
-    string sysMsg = "Adjust Bet, select Mode/Lucky No, then ROLL!";
+    string sysMsg = "Adjust Bet, select Mode/Lucky No, then ROLL!"; //ของ UI ใต้กล่อง
     Color msgColor = RAYWHITE;
 
-    int gameState = 0; // 0=หน้าหลัก/เดิมพัน, 3=หน้าวิธีเล่น
+    int gameState = 0; // 0=หน้าหลัก/เดิมพัน, 3=หน้าวิธีเล่น 1ระหว่างประมวลเล่น 2สรุปผล
 
-    //กำหนดตำแหน่งปุ่ม
-    Rectangle btnBack   = { 30, 30, 100, 40 };
-    Rectangle btnHTP    = { 30, 80, 150, 40 }; 
+    //กำหนดตำแหน่งปุ่ม สร้างค่าไว้เฉยๆ
+    Rectangle btnBack   = { 30, 30, 100, 40 }; //ปุ่มกลับ
+    Rectangle btnHTP    = { 30, 80, 150, 40 }; //ปุ่มเปิดคู่มือ
     Rectangle boxBet    = { centerX - 260, 520, 200, 45 }; // กล่องเดิมพัน
     Rectangle btnRoll   = { centerX - 120, 620, 240, 60 }; // ปุ่มทอยเต๋า
 
-    int frameDelay = 0; // ป้องกันบัคจากการคลิกเมาส์เfร็วเกิน
+    int frameDelay = 0; // ป้องกันบัคจากการคลิกเมาส์เร็วเกิน ไว้กันดีเลย์
 
-    while (!WindowShouldClose()) {
-        frameDelay++;
-        Vector2 mousePos = GetMousePosition();
+    while (!WindowShouldClose()){ //ไว้ออกลูป
+        frameDelay++; 
+        Vector2 mousePos = GetMousePosition(); //ไว้ขยับเม้าเเกน x y
         // เช็คการคลิกเมาส์ซ้ายพร้อมหน่วงเวลา
-        bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (frameDelay > 10);
+        bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (frameDelay > 10); //สร้างจาก function ของ raylib
 
         // พิกัดปุ่มเลือกโหมดการเล่น
         Rectangle rMode1 = { 380, 280, 180, 45 }; 
@@ -95,10 +96,10 @@ void playHiloUI(Player &p) {
         //ส่วนของการคำนวณ
         if (gameState == 0) {
             if (!isRolling) {
-                if (isClick) {
+                if (isClick) { //เอา isclick มาใช้
                     // ปุ่มย้อนกลับและวิธีเล่น
                     if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(htpImg); return; }
-                    if (CheckCollisionPointRec(mousePos, btnHTP)) gameState = 3;
+                    if (CheckCollisionPointRec(mousePos, btnHTP)) gameState = 3; //หน้่าวิธีเล่น
                     
                     // เปิด/ปิดการพิมพ์ในกล่อง Bet
                     if (CheckCollisionPointRec(mousePos, boxBet)) betBoxActive = true; else betBoxActive = false;
@@ -140,15 +141,15 @@ void playHiloUI(Player &p) {
                 // จัดการการพิมพ์ตัวเลขเดิมพันผ่านคีย์บอร์ด
                 if (betBoxActive) {
                     int key = GetCharPressed();
-                    while (key > 0) {
-                        if ((key >= '0') && (key <= '9') && betInput.length() < 7) betInput += (char)key;
+                    while (key > 0) { //วนลูปรับตัวอักษรทั้งหมด
+                        if ((key >= '0') && (key <= '9') && betInput.length() < 7) betInput += (char)key; //ตรวจว่าเป็นตัวเลขหรือไม่พิมได้เฉพาะเลขไม่เกิน 7 หลัก
                         key = GetCharPressed(); 
                     }
-                    if (IsKeyPressed(KEY_BACKSPACE) && betInput.length() > 0) betInput.pop_back();
+                    if (IsKeyPressed(KEY_BACKSPACE) && betInput.length() > 0) betInput.pop_back(); // ไว้ลบ
                 }
             } else {
                 //จำลองการเขย่าลูกเต๋าโดยสุ่มเลขรัวๆ1.5 วินาที
-                rollTimer += GetFrameTime();
+                rollTimer += GetFrameTime(); //ของ rylib
                 dice[0] = rollDiceLogic(); dice[1] = rollDiceLogic(); dice[2] = rollDiceLogic();
                 
                 if (rollTimer >= 1.5f) { // เมื่อเขย่าเสร็จ
@@ -158,7 +159,7 @@ void playHiloUI(Player &p) {
 
                     // ตรวจสอบรางวัลตามโหมดที่เลือก
                     if (choice == 1) { // สูง/ต่ำ
-                        if (!(dice[0] == dice[1] && dice[1] == dice[2])) { // เจ้ามือกินตอง
+                        if (!(dice[0] == dice[1] && dice[1] == dice[2])) { // คำนวณสูงต่ำ
                             if (hlChoice == 1 && sum >= 4 && sum <= 10) { win = true; reward = bet * 2; }
                             else if (hlChoice == 2 && sum >= 11 && sum <= 17) { win = true; reward = bet * 2; }
                         }
@@ -264,6 +265,7 @@ void playHiloUI(Player &p) {
         }
         EndDrawing();
     }
+
     UnloadTexture(htpImg);
 }
 #endif

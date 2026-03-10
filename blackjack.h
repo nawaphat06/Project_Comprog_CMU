@@ -1,4 +1,4 @@
-#ifndef BLACKJACK_UI_H
+#ifndef BLACKJACK_UI_H //กันไฟล์ obj สร้างซ้ำ
 #define BLACKJACK_UI_H
 
 #include "raylib.h"
@@ -44,7 +44,7 @@ static int CalculateScore(vector<Card> hand) {
     int score = 0, aces = 0;
     for (auto c : hand) {
         score += c.value;
-        if (c.rank == "A") aces++; //นับจำนวนไพ่ Ace ในมือ
+        if (c.rank == "A") aces++; //นับจำนวนไพ่ Ace ในมือ 
     }
     // ถ้าแต้มรวมเกิน 21 และมี Ace อยู่ ให้ลดแต้ม Ace จาก 11 เหลือ 1
     while (score > 21 && aces > 0) { 
@@ -97,7 +97,7 @@ void playBlackjackUI(Player &p) {
     Rectangle btnHit       = { centerX - 220, 610, 200, 55 };
     Rectangle btnStand     = { centerX + 20, 610, 200, 55 };
 
-    int frameDelay = 0; // กันบัคคลิกเบิ้ลนะน้อง
+    int frameDelay = 0; // กันบัคคลิกเบิ้ลนะน้อง กันไม่ให้โดน Hit จากเริ่ม bet
 
     while (!WindowShouldClose()) {
         frameDelay++;
@@ -108,13 +108,13 @@ void playBlackjackUI(Player &p) {
         //ส่วนของการประมวลผล
         if (gameState == 0) { // หน้าวางเดิมพัน
             if (isClick) {
-                if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(htpBJ); return; }
-                if (CheckCollisionPointRec(mousePos, btnHTP)) gameState = 3;
+                if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(htpBJ); return; } // ปุ่น back
+                if (CheckCollisionPointRec(mousePos, btnHTP)) gameState = 3; //ปุ่ม How to play
                 
-                if (CheckCollisionPointRec(mousePos, boxBet)) betBoxActive = true;
+                if (CheckCollisionPointRec(mousePos, boxBet)) betBoxActive = true; //ปดล็อคปุ่มเดิมพัน
                 else betBoxActive = false;
                 
-                if (CheckCollisionPointRec(mousePos, btnDeal)) {
+                if (CheckCollisionPointRec(mousePos, btnDeal)) { //เริ่มการ Deal 
                     bet = atoi(betInput.c_str()); 
                     if (p.credit >= bet && bet > 0) {
                         p.credit -= bet; // หักเงินเดิมพัน
@@ -162,22 +162,55 @@ void playBlackjackUI(Player &p) {
                 // [Action] จั่วไพ่ (HIT)
                 if (CheckCollisionPointRec(mousePos, btnHit)) {
                     playerHand.push_back(deck.back()); deck.pop_back();
-                    dealerHand.push_back(deck.back()); deck.pop_back();
+                    // เราลบการจั่วของบอทออก เพื่อให้บอทไปคิดตอนเรากด STAND ทีเดียวครับ
 
                     // เช็คเงื่อนไขแต้มเกิน
                     if (CalculateScore(playerHand) > 21) {
                         gameState = 2; p.loss_count++;
                         statusMsg = "BUST! YOU LOSE."; msgColor = RED;
-                    } else if (CalculateScore(dealerHand) > 21) {
-                        gameState = 2; p.credit += bet * 2; p.win_count++;
-                        statusMsg = "ENEMY BUSTS! YOU WIN!"; msgColor = GREEN;
-                    }
+                    } 
                 }
-                // [Action] หยุดจั่ว (STAND) - วัดแต้มทันที
+                // [Action] หยุดจั่ว (STAND) - ให้บอทตัดสินใจ
                 else if (CheckCollisionPointRec(mousePos, btnStand)) {
                     gameState = 2;
                     int pS = CalculateScore(playerHand);
-                    int dS = CalculateScore(dealerHand);
+                
+                    ///////////////////////////// Dealer's Logic ///////////////////////////////////
+                    int bot_want_to_draw = 1;
+
+                    while(bot_want_to_draw == 1){ 
+                        // อัปเดตแต้มของบอทเสมอเพื่อใช้ตัดสินใจ
+                        int bot_card_total_value = CalculateScore(dealerHand); 
+
+                        if (bot_card_total_value < 20){
+                            vector<int> true_or_false_spinwheel;
+
+                            for (int i = 0; i < 21 - bot_card_total_value; i++){
+                                true_or_false_spinwheel.push_back(1); // 1 = จั่ว
+                            }
+                            for (int i = 0; i < bot_card_total_value; i++){
+                                true_or_false_spinwheel.push_back(0); // 0 = ไม่จั่ว
+                            }
+                            
+                            int rng = rand() % true_or_false_spinwheel.size();
+                            bot_want_to_draw = true_or_false_spinwheel[rng];
+
+                            // ถ้ายอดไม่เกิน 11 (จั่วฟรีไม่มีวันแตก) หรือสุ่มได้ว่าอยากจั่ว
+                            if (bot_want_to_draw == 1 || bot_card_total_value <= 11) {
+                                dealerHand.push_back(deck.back()); 
+                                deck.pop_back();
+                                bot_want_to_draw = 1; // สั่งให้วนลูปคิดต่อ
+                            } else {
+                                bot_want_to_draw = 0; // บอทตัดสินใจหยุดจั่ว
+                            }
+                        }
+                        else {
+                            break; // ถ้าแต้ม 20 หรือ 21 หยุดจั่วแน่นอน
+                        }
+                    }
+                    /////////////////////////////////////////////////////////////////////////////////
+
+                    int dS = CalculateScore(dealerHand); // อัปเดตแต้มสรุปสุดท้ายของบอท
                     
                     // ตัดสินผลแพ้ชนะตามแต้มรวม
                     if (dS > 21 || pS > dS) { p.credit += bet * 2; p.win_count++; statusMsg = "YOU WIN!"; msgColor = GREEN; }

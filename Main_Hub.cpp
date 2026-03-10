@@ -1,3 +1,4 @@
+//มุซันจะกลับมาในอเวนเจอร์ดูมเดย์
 #include <iostream>
 #include <string>
 
@@ -6,7 +7,7 @@
 #include "Auth.h" 
 
 
-// นำเข้าไลบรารีกราฟิกและไฟล์มินิเกมทั้งหมด
+// นำเข้าlibกราฟิกและไฟล์มินิเกมทั้งหมด
 #include "raylib.h"
 #include "slot.h" 
 #include "hilo.h" 
@@ -171,7 +172,7 @@ int main() {
 
             // ขั้นตอน Draw: วาดหน้าฟอร์ม
             BeginDrawing();
-            ClearBackground(Color{ 15, 25, 50, 255 });
+            ClearBackground(Color{ 15, 25, 50, 255 });//พื้นหลัง
             //(ข้อความ, แกน x (แบบกึ่งกลาง) , แกน y + พิกเซล, ขนาด front , สี )
             DrawText(isLoginMode ? "ACCOUNT LOGIN" : "ACCOUNT REGISTER", centerX - MeasureText(isLoginMode ? "ACCOUNT LOGIN" : "ACCOUNT REGISTER", 40)/2, 80, 40, GOLD);
             //ข้อความแจ้งเตือน
@@ -202,7 +203,7 @@ int main() {
         }
         
         // --------------------
-        // [screenState 2] หน้าคาสิโนหลัก
+        // screenState 2 หน้าคาสิโนหลัก
         // ----------------------------
         else if (screenState == 2) {
             Rectangle btnSlot      = { centerX - 180, 270, 360, 55 };
@@ -247,7 +248,7 @@ int main() {
             // ขั้นตอน Draw: วาดหน้าเมนูหลัก
             BeginDrawing();
             ClearBackground(Color{ 10, 40, 20, 255 }); // โทนสีเขียวคาสิโน
-            DrawRectangleGradientV(0, 0, screenWidth, screenHeight, Color{ 20, 60, 30, 255 }, Color{ 10, 30, 15, 255 }); //ไล่สี
+            DrawRectangleGradientV(0, 0, screenWidth, screenHeight, Color{ 20, 60, 30, 255 }, Color{ 10, 30, 15, 255 }); //ไล่สีแบบบนลงล่าง, สีบน, สีล่าง
 
             DrawText("SCAMMER CASINO CLUB", centerX - MeasureText("SCAMMER CASINO CLUB", 50)/2 + 3, 43, 50, BLACK);//เงา
             DrawText("SCAMMER CASINO CLUB", centerX - MeasureText("SCAMMER CASINO CLUB", 50)/2, 40, 50, GOLD);
@@ -283,13 +284,12 @@ int main() {
             bool logHover = CheckCollisionPointRec(mousePos, btnLogout);
             DrawRectangleRounded(btnLogout, 0.2f, 10, logHover ? RED : MAROON);
             DrawText("LOGOUT & SAVE", btnLogout.x + (btnLogout.width - MeasureText("LOGOUT & SAVE", 22))/2, btnLogout.y + 16, 22, WHITE);
-
+            
             EndDrawing(); // จบการวาด
         }
     }
 
-    // จัดการข้อมุลก่อนปิดโปรแกรม 
-    // ถ้าผู้เล่นกดปิดหน้าต่างไปเลย ให้เซฟข้อมูลก่อนถ้าไม่ได้เป็น Guest
+-    // ถ้าผู้เล่นกดปิดหน้าต่างตอนหน้า main menu ไปเลย ไม่ได้กด logout ให้เซฟข้อมูลเผื่อก่อนถ้าไม่ได้เป็น Guest
     if (screenState == 2 && p1.name != "Guest Player") Auth::SaveUser(p1, currentPassword);
     
     CloseWindow(); //ปิดหน้าต่าง
