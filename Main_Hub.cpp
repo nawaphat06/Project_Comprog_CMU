@@ -77,7 +77,7 @@ int main() {
 
             // ขั้นตอน Draw: เริ่มวาดกราฟิกบนหน้าจอ
             BeginDrawing();
-            ClearBackground(Color{ 15, 25, 50, 255 }); //เทสีพื้นหลัง = Midnight Blue
+            ClearBackground(Color{ 15, 25, 50, 255 }); //สีพื้นหลัง = Midnight Blue
             
             // วาดแสงสะท้อนพื้นหลังแบบไล่ระดับ
             DrawCircleGradient(centerX, centerY, 600, Color{ 30, 50, 100, 255 }, Color{ 15, 25, 50, 255 });
@@ -92,15 +92,22 @@ int main() {
 
             // ใช้ Loop วาดปุ่มทั้ง 4 ปุ่ม
             Rectangle btns[] = { btnGoLogin, btnGoReg, btnGoGuest, btnExitGame };
-            const char* lbls[] = { "LOGIN", "REGISTER", "PLAY AS GUEST", "EXIT GAME" };
-            Color baseColors[] = { RAYWHITE, RAYWHITE, RAYWHITE, Color{ 180, 40, 40, 255 } }; //Color{ 180, 40, 40, 255 } = แดง
+            const char* lbls[] = { "LOGIN", "REGISTER", "PLAY AS GUEST", "EXIT GAME" }; //label
+            Color baseColors[] = { RAYWHITE, RAYWHITE, RAYWHITE, Color{ 180, 40, 40, 255 } }; //Color{ 180, 40, 40, 255 } = แดงไม่มาก
 
             for(int i=0; i<4; i++) {
                 bool hover = CheckCollisionPointRec(mousePos, btns[i]);
                 //ถ้านำเมาส์ไปชี้ ให้เปลี่ยนเป็นสีทอง ถ้าไม่ชี้ให้ใช้สีปกติ
                 DrawRectangleRounded(btns[i], 0.2f, 10, hover ? GOLD : baseColors[i]);
-                DrawText(lbls[i], btns[i].x + (btns[i].width - MeasureText(lbls[i], 25))/2, btns[i].y + 18, 25, (i == 3) ? WHITE : BLACK);
-                //(ข้อความ, แกน x (แบบกึ่งกลาง) , แกน y + พิกเซล, ขนาด front , เปลี่ยนสีถ้าสัมผัส )
+                DrawText(lbls[i],
+                         btns[i].x + (btns[i].width - MeasureText(lbls[i], 25))/2,
+                         btns[i].y + 18, 25,
+                         (i == 3) ? WHITE : BLACK);
+                // Rectangle btnGoLogin  = { centerX - 150, 320, 300, 60 }; (x,y,width,height)
+                // Rectangle btnGoReg    = { centerX - 150, 400, 300, 60 };
+                // Rectangle btnGoGuest  = { centerX - 150, 480, 300, 60 };
+                // Rectangle btnExitGame = { centerX - 150, 560, 300, 60 }; 
+
             }
 
             EndDrawing();
@@ -288,9 +295,9 @@ int main() {
             EndDrawing(); // จบการวาด
         }
     }
-
--    // ถ้าผู้เล่นกดปิดหน้าต่างตอนหน้า main menu ไปเลย ไม่ได้กด logout ให้เซฟข้อมูลเผื่อก่อนถ้าไม่ได้เป็น Guest
-    if (screenState == 2 && p1.name != "Guest Player") Auth::SaveUser(p1, currentPassword);
+    
+    // ถ้าผู้เล่นกดปิดหน้าต่างตอนหน้า main menu ไปเลย ไม่ได้กด logout ให้เซฟข้อมูลเผื่อก่อนถ้าไม่ได้เป็น Guest
+    if(screenState == 2 && p1.name != "Guest Player") Auth::SaveUser(p1, currentPassword);
     
     CloseWindow(); //ปิดหน้าต่าง
     return 0;

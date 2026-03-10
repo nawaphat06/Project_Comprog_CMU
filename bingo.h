@@ -168,6 +168,9 @@ void playBingoUI(Player &p) {
                 if (IsKeyPressed(KEY_BACKSPACE) && betInput.length() > 0) betInput.pop_back();
             }
         } else if (gameState == 1) { // จั่วบอล
+            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(howToPlayImg); return; } //กดปุ่ม back
+            if (isClick && CheckCollisionPointRec(mousePos, btnHowToPlay)) gameState = 3; //กดปุ่ม how to play
+
             if (isClick && CheckCollisionPointRec(mousePos, btnDraw)) {
                 if (!ballPool.empty()) {
                     lastBall = ballPool.back(); ballPool.pop_back(); // จั่วบอลออกจากถุง
@@ -291,10 +294,13 @@ void playBingoUI(Player &p) {
                 }
             }
 
-            if (gameState != 1) { // ปุ่ม BACK จะแสดงเฉพาะหน้าที่ไม่ได้กำลังแข่ง
-                DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON); 
-                DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
-            }
+            //แสดง ปุ่ม back
+            DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON); 
+            DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
+            
+            // แสดงปุ่ม back
+            DrawRectangleRec(btnHowToPlay, CheckCollisionPointRec(mousePos, btnHowToPlay) ? GRAY : DARKGRAY);
+            DrawText("HOW TO PLAY", btnHowToPlay.x + 15, btnHowToPlay.y + 11, 18, RAYWHITE);
         }
         EndDrawing();
     }

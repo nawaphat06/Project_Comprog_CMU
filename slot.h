@@ -34,18 +34,18 @@ static vector<SlotSymbol> slotSymbols = {
 static SlotSymbol spinSlotSymbol() {
     int totalWeight = 0;
     //รวมน้ำหนักทั้งหมดก่อน
-    for (const auto& s : slotSymbols) totalWeight += s.weight;
+    for (int i = 0; i < slotSymbols.size(); i++) {
+        totalWeight += slotSymbols[i].weight;
+    }
     
     //สุ่มเลขในช่วงน้ำหนักทั้งหมด
     int rnd = rand() % totalWeight;
     
     //วนลูปหักลบน้ำหนักไปเรื่อยๆ จนกว่าค่าสุ่มจะอยู่ในช่วงของสัญลักษณ์นั้น
-    for (const auto& s : slotSymbols) {
-        if (rnd < s.weight) return s;
-        rnd -= s.weight;
+    for (int i = 0; i < slotSymbols.size(); i++) {
+        if (rnd < slotSymbols[i].weight) return slotSymbols[i];
+        rnd -= slotSymbols[i].weight;
     }
-    return slotSymbols.back();//ให้คืนค่าตัวสุดท้าย
-}
 
 void playSlotUI(Player &p) {
     //ตั้งค่าตำแหน่งหน้าจอ
@@ -199,12 +199,15 @@ void playSlotUI(Player &p) {
             DrawRectangle(stX - 20, stY - 20, gW + 40, (bSize * 3) + (spc * 2) + 40, Color{ 5, 15, 40, 255 }); 
             DrawRectangleLinesEx({(float)stX - 20, (float)stY - 20, (float)gW + 40, (float)(bSize * 3) + (spc * 2) + 40}, 6, GOLD); 
 
-            // วนลูปวาดช่องสล็อต 3x3
+            // วนลูปวาดช่องสล็อต 3x3 // i = แถว, j = col
+            //stX, stY (Start X, Y): จุดเริ่มต้นของตาราง (มุมซ้ายบนสุด)
+            //bSize ขนาดความกว้าง/สูงของช่องแต่ละช่อง
+            //spc ระยะห่างระหว่างช่อง (Gap)
             for (int i = 0; i < 3; i++) {
                 for (int j = 0; j < 3; j++) {
-                    int cellX = stX + (j * (bSize + spc));
-                    int cellY = stY + (i * (bSize + spc));
-                    // ถ้าช่องนั้นชนะ ให้เปลี่ยนเป็นสีเขียว (LIME) ถ้าไม่ให้เป็นสีขาว (RAYWHITE)
+                    int cellX = stX + (j * (bSize + spc)); //ขยับไปทางขวา j ช่อง * ขนาดช่อง = bSize + spc
+                    int cellY = stY + (i * (bSize + spc)); //ขยับลงมาข้างล่าง 1 ช่อง *ขนาดช่อง
+                    // ถ้าช่องนั้นชนะ ให้เปลี่ยนเป็นสีเขียว
                     DrawRectangle(cellX, cellY, bSize, bSize, winCells[i][j] ? LIME : RAYWHITE);
                     // วาดตัวหนังสือสัญลักษณ์
                     DrawText(board[i][j].name.c_str(), cellX + (bSize - MeasureText(board[i][j].name.c_str(), 35))/2, cellY + 40, 35, winCells[i][j] ? BLACK : board[i][j].color);
