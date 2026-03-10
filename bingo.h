@@ -11,7 +11,6 @@
 
 using namespace std;
 
-
 class BingoGame {
 public:
     int player_paper[5][5];  // เก็บตัวเลขบนกระดานของผู้เล่น (5x5)
@@ -63,7 +62,6 @@ public:
     }
 };
 
-
 // ส่วนจัดการหน้าจอและการเล่น
 void playBingoUI(Player &p) {
     // ตั้งค่าตำแหน่งหน้าจอ
@@ -82,6 +80,8 @@ void playBingoUI(Player &p) {
 
     // gameState: 0=เลือกการ์ด, 1=กำลังเล่น, 2=จบเกม, 3=หน้าสอนเล่น
     int gameState = 0; 
+    int previousState = 0;  // ตัวแปรจำว่าก่อนเปิดคู่มือ ผู้เล่นอยู่หน้าไหน
+
     int lastBall = 0;       // เลขลูกบอลล่าสุดที่จั่วได้
     vector<int> ballPool;   // ถุงเก็บลูกบอลเลข 1-99 สำหรับเริ่มจั่ว
     vector<int> drawnBalls; // ประวัติเลขที่จั่วออกมาแล้วทั้งหมด
@@ -95,7 +95,7 @@ void playBingoUI(Player &p) {
 
     //การคำนวณตำแหน่ง
     int boxSize = 60, spacing = 6;
-    int gridW = (boxSize * 5) + (spacing * 4); // ความกว้างรวมของตาราง (boxSize * 5 แถว) + (spacing * 4 ช่องว่าง)
+    int gridW = (boxSize * 5) + (spacing * 4); // ความกว้างรวมของตาราง
     int c1X = 100, cY = 160; 
     int c2X = screenWidth - 100 - gridW; 
 
@@ -117,11 +117,11 @@ void playBingoUI(Player &p) {
         // เช็คการคลิกเมาส์พร้อมตัวหน่วงเวลา (frameDelay > 10)
         bool isClick = IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && (frameDelay > 10);
 
-        //ส่วนประมวลผล
+        // ส่วนประมวลผลคลิก
         if (gameState == 0) { // เลือกกระดานและวางเงิน
             if (isClick) {
-                if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(howToPlayImg); return; }
-                if (CheckCollisionPointRec(mousePos, btnHowToPlay)) gameState = 3; 
+                if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(howToPlayImg); return; } // ออกไปเมนูหลัก
+                if (CheckCollisionPointRec(mousePos, btnHowToPlay)) { previousState = 0; gameState = 3; frameDelay = 0; } //กันคลิกเบิ้ล
                 
                 if (CheckCollisionPointRec(mousePos, btnSelect1)) selectedCard = 1;
                 if (CheckCollisionPointRec(mousePos, btnSelect2)) selectedCard = 2;
@@ -168,8 +168,8 @@ void playBingoUI(Player &p) {
                 if (IsKeyPressed(KEY_BACKSPACE) && betInput.length() > 0) betInput.pop_back();
             }
         } else if (gameState == 1) { // จั่วบอล
-            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(howToPlayImg); return; } //กดปุ่ม back
-            if (isClick && CheckCollisionPointRec(mousePos, btnHowToPlay)) gameState = 3; //กดปุ่ม how to play
+            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(howToPlayImg); return; } // ออกไปเมนูหลักเลยถ้ากดออกขระเล่น
+            if (isClick && CheckCollisionPointRec(mousePos, btnHowToPlay)) { previousState = 1; gameState = 3; frameDelay = 0; } //กันคลิกเบิ้ล
 
             if (isClick && CheckCollisionPointRec(mousePos, btnDraw)) {
                 if (!ballPool.empty()) {
@@ -189,17 +189,21 @@ void playBingoUI(Player &p) {
                     }
                 }
             }
-        } else if (gameState == 2) { //จบเกม
+        } else if (gameState == 2) { // จบเกม
             if (isClick) {
-                if (CheckCollisionPointRec(mousePos, btnDraw)) { 
+                if (CheckCollisionPointRec(mousePos, btnDraw)) { // ปุ่มเล่นใหม่
                     gameState = 0; lastBall = 0; drawnBalls.clear();
                     game.randbingo(card1); game.randbingo(card2);
                     sysMsg = "Adjust Bet & Choose your Card!"; msgColor = RAYWHITE;
                 }
-                if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(howToPlayImg); return; }
+                if (CheckCollisionPointRec(mousePos, btnBack)) { UnloadTexture(howToPlayImg); return; } // ออกไปเมนูหลัก
+                if (CheckCollisionPointRec(mousePos, btnHowToPlay)) { previousState = 2; gameState = 3; frameDelay = 0; } //กันคลิกเบิ้ล
             }
         } else if (gameState == 3) { // หน้าสอนเล่น
-            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) gameState = 0;
+            if (isClick && CheckCollisionPointRec(mousePos, btnBack)) {
+                gameState = previousState; // คืนค่ากลับไปหน้าเดิมก่อนเข้าวิธีเล่น
+                frameDelay = 0; //กันคลิ๊กเบิ้ล
+            }
         }
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,7 +211,7 @@ void playBingoUI(Player &p) {
         BeginDrawing();
         ClearBackground(Color{ 10, 20, 45, 255 });//พื้นหลัง
 
-        if (gameState == 3) { // หน้าวิธีเล่น
+        if (gameState == 3) { // วาดหน้าวิธีเล่น
             if (howToPlayImg.id != 0) DrawTexture(howToPlayImg, 0, 0, WHITE);
             DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON); 
             DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
@@ -216,10 +220,8 @@ void playBingoUI(Player &p) {
             DrawText("BINGO BONANZA", centerX - MeasureText("BINGO BONANZA", 45)/2, 20, 45, GOLD);
             DrawText(TextFormat("Credits: $%.2f", p.credit), 1050, 30, 25, GOLD);
             
-            if (gameState == 0) { //วาด UI ช่วงเลือกกระดาน
+            if (gameState == 0) { // วาด UI ช่วงเลือกกระดาน
                 DrawText(sysMsg.c_str(), centerX - (MeasureText(sysMsg.c_str(), 25) / 2.0f), 100, 25, msgColor);
-                DrawRectangleRec(btnHowToPlay, CheckCollisionPointRec(mousePos, btnHowToPlay) ? GRAY : DARKGRAY);
-                DrawText("HOW TO PLAY", btnHowToPlay.x + 15, btnHowToPlay.y + 11, 18, RAYWHITE);
 
                 // แผงควบคุมตรงกลาง
                 DrawRectangle(centerX - 160, 210, 320, 340, Color{0, 0, 0, 150}); 
@@ -294,11 +296,11 @@ void playBingoUI(Player &p) {
                 }
             }
 
-            //แสดง ปุ่ม back
+            // แสดงปุ่ม BACK ทุก State (ยกเว้น 3)
             DrawRectangleRec(btnBack, CheckCollisionPointRec(mousePos, btnBack) ? RED : MAROON); 
             DrawText("BACK", btnBack.x + 20, btnBack.y + 10, 20, WHITE);
             
-            // แสดงปุ่ม back
+            // แสดงปุ่ม HOW TO PLAY ทุก State (ยกเว้น 3)
             DrawRectangleRec(btnHowToPlay, CheckCollisionPointRec(mousePos, btnHowToPlay) ? GRAY : DARKGRAY);
             DrawText("HOW TO PLAY", btnHowToPlay.x + 15, btnHowToPlay.y + 11, 18, RAYWHITE);
         }
