@@ -189,7 +189,7 @@ void playHiloUI(Player &p) {
             if (isClick && CheckCollisionPointRec(mousePos, btnBack)) gameState = 0;
         }
 
-        // ส่วนของการวาดผลลัพธ์
+        // ส่วนของการวาดกราฟฟิค
         BeginDrawing();
         ClearBackground(Color{ 10, 50, 20, 255 }); // สีเขียว
 
@@ -215,7 +215,7 @@ void playHiloUI(Player &p) {
             //พื้นหลังแผงควบคุม
             DrawRectangle(140, 270, 1000, 320, Color{0, 0, 0, 100});
 
-            //เลือกโหมด (Mode Selection)
+            //เลือกโหมด
             DrawText("1. SELECT MODE:", 180, 290, 20, WHITE);
             DrawRectangleRec(rMode1, (choice == 1) ? GOLD : GRAY); DrawText("High/Low", rMode1.x+45, rMode1.y+12, 20, BLACK);
             DrawRectangleRec(rMode2, (choice == 2) ? GOLD : GRAY); DrawText("Triple", rMode2.x+60, rMode2.y+12, 20, BLACK);
@@ -243,7 +243,7 @@ void playHiloUI(Player &p) {
                 DrawRectangleRec(r, (luckyNumber == i) ? SKYBLUE : GRAY); DrawText(TextFormat("%d", i), r.x+25, r.y+10, 20, BLACK);
             }
 
-            //  กำหนดเงินเดิมพัน (Bet Area)
+            //  กำหนดเงินเดิมพัน
             DrawText("3. BET AMOUNT:", 180, 532, 20, PINK);
             DrawRectangleRec(boxBet, betBoxActive ? RAYWHITE : LIGHTGRAY);
             // ไฮไลท์สีทองเมื่อกล่อง Bet ถูกเลือก

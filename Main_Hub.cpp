@@ -93,7 +93,7 @@ int main() {
             // ใช้ Loop วาดปุ่มทั้ง 4 ปุ่ม
             Rectangle btns[] = { btnGoLogin, btnGoReg, btnGoGuest, btnExitGame };
             const char* lbls[] = { "LOGIN", "REGISTER", "PLAY AS GUEST", "EXIT GAME" }; //label
-            Color baseColors[] = { RAYWHITE, RAYWHITE, RAYWHITE, Color{ 180, 40, 40, 255 } }; //Color{ 180, 40, 40, 255 } = แดงไม่มาก
+            Color baseColors[] = { RAYWHITE, RAYWHITE, RAYWHITE, Color{ 180, 40, 40, 255 } };
 
             for(int i=0; i<4; i++) {
                 bool hover = CheckCollisionPointRec(mousePos, btns[i]);

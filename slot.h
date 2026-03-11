@@ -18,7 +18,7 @@ struct SlotSymbol {
     Color color;   // สีของตัวอักษร
 };
 
-// กำหนดสัญลักษณ์ และ %
+// กำหนดสัญลักษณ์, เงิน, % และ สี
 static vector<SlotSymbol> slotSymbols = {
     {"777", 200, 2, GOLD},
     {"BAR", 100, 6, RED},           
@@ -236,7 +236,6 @@ void playSlotUI(Player &p) {
             if (!isSpinning) {
                 DrawText("BET AMOUNT:", boxBet.x - 140, boxBet.y + 12, 20, RAYWHITE);
                 DrawRectangleRec(boxBet, betBoxActive ? RAYWHITE : LIGHTGRAY);
-                // ถ้าเลือกช่อง Bet ให้วาดเส้นขอบสีทอง (Active State)
                 DrawRectangleLinesEx(boxBet, 2, betBoxActive ? GOLD : BLACK);
                 DrawText(betInput.c_str(), boxBet.x + 15, boxBet.y + 8, 30, BLACK);
                 

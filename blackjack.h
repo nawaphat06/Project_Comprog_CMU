@@ -39,7 +39,7 @@ static vector<Card> CreateDeck() {
     return deck;
 }
 
-// คำนวณแต้มรวมและจัดการค่าของ Ace (A)
+// คำนวณแต้มรวมและเช็คค่าของ Ace (A)
 static int CalculateScore(vector<Card> hand) {
     int score = 0, aces = 0;
     for (auto c : hand) {
@@ -97,7 +97,7 @@ void playBlackjackUI(Player &p) {
     Rectangle btnHit       = { centerX - 220, 610, 200, 55 };
     Rectangle btnStand     = { centerX + 20, 610, 200, 55 };
 
-    int frameDelay = 0; // กันบัคคลิกเบิ้ลนะน้อง กันไม่ให้โดน Hit จากเริ่ม bet
+    int frameDelay = 0; // กันบัคคลิกเบิ้ลนะน้อง
 
     while (!WindowShouldClose()) {
         frameDelay++;
@@ -250,7 +250,7 @@ void playBlackjackUI(Player &p) {
                 Rectangle r = { dealerStartX + (i * 110), 120.0f, 100.0f, 140.0f };
                 DrawRectangle(r.x + 5, r.y + 5, r.width, r.height, Color{0,0,0,80}); // วาดเงาใต้ไพ่
                 
-                // ขณะเล่น (State 1) ให้ "ปิดไพ่ใบแรก" ของเจ้ามือไว้
+                // ขณะเล่น (State 1) ให้ ปิดไพ่ใบแร ของเจ้ามือไว้
                 if (gameState == 1 && i == 0) {
                     DrawRectangleRec(r, DARKGRAY); DrawText("?", r.x+35, r.y+40, 60, BLACK);
                 } else {
